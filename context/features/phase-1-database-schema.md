@@ -5,7 +5,7 @@
 
 | Field        | Value                                          |
 | ------------ | ---------------------------------------------- |
-| Status       | Implemented (pending review/commit)            |
+| Status       | Completed (2026-06-29)                          |
 | Branch       | `feature/database-schema`                      |
 | Roadmap ref  | Phase 1                                         |
 | Depends on   | Phase 0 (running server + `DATABASE_URL`)      |

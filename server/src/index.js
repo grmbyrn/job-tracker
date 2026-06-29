@@ -1,15 +1,39 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import { prisma } from './db.js';
+import { authRouter } from './auth/routes.js';
+import { requireAuth } from './auth/middleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
-app.use(cors());
+// credentials + explicit origin so the httpOnly refresh cookie round-trips
+// from the Vite client (wildcard origins can't be used with credentials).
+app.use(cors({ origin: CLIENT_ORIGIN, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true });
+});
+
+app.use('/api/auth', authRouter);
+
+// Protected: proves the access token → req.userId flow end to end.
+app.get('/api/me', requireAuth, async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { id: true, email: true, createdAt: true },
+    });
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.listen(PORT, () => {
