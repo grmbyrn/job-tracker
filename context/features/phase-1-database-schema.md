@@ -5,7 +5,7 @@
 
 | Field        | Value                                          |
 | ------------ | ---------------------------------------------- |
-| Status       | Not started                                    |
+| Status       | Implemented (pending review/commit)            |
 | Branch       | `feature/database-schema`                      |
 | Roadmap ref  | Phase 1                                         |
 | Depends on   | Phase 0 (running server + `DATABASE_URL`)      |
@@ -94,4 +94,27 @@ and typed client to talk to.
 - Follow-up timer config (per-lane days, max follow-ups, 7-day message timer):
   keep as **server constants** for now; revisit a `Settings` model only if the
   UI needs them configurable (roadmap Phase 6).
-- _(further notes captured during implementation)_
+
+### Implementation notes (Prisma 7.8)
+
+Prisma 7 differs from the roadmap's assumptions; deviations made:
+
+- **Driver-adapter-first runtime.** Prisma 7 dropped the bundled query engine,
+  so `PrismaClient` must be constructed with a driver adapter. Added
+  `@prisma/adapter-pg` and build it from `DATABASE_URL` in the shared client
+  ([server/src/db.js](../../server/src/db.js)).
+- **Generator choice.** `prisma init` scaffolds the new `prisma-client`
+  generator, which emits **TypeScript** to `src/generated/prisma`. Since the
+  server is plain JS ESM, switched to the legacy `prisma-client-js` generator
+  (emits into `node_modules/@prisma/client`, imported as `@prisma/client`) — no
+  generated source in the repo, no TS build step.
+- **Config + datasource URL.** Lives in `server/prisma.config.ts` (reads
+  `DATABASE_URL` via `dotenv/config`); the `datasource` block in
+  `schema.prisma` no longer carries a `url`. Seed command is registered under
+  `migrations.seed` in that config (`prisma db seed`).
+- **On-delete behavior:** `User → Company/Contact/Application` cascade;
+  `Contact → Company` is `SetNull` (chosen as recommended); `Activity → Contact`
+  cascades.
+- Migration `20260629100019_init`; seed at
+  [server/prisma/seed.js](../../server/prisma/seed.js) is idempotent (deletes the
+  seed user, then recreates the graph).
