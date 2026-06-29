@@ -1,6 +1,6 @@
 # Current feature
 
-**Database Schema & Prisma — Phase 1** (Not started)
+**Database Schema & Prisma — Phase 1** (Implemented — pending review/commit)
 
 > Full spec: [features/phase-1-database-schema.md](features/phase-1-database-schema.md) ·
 > Roadmap: [roadmap.md](roadmap.md) (Phase 1)
@@ -31,17 +31,20 @@ and a typed client to talk to.
 
 ## Acceptance criteria
 
-- [ ] `prisma migrate dev` completes; migration committed under `server/prisma/migrations/`.
-- [ ] `npm run db:seed` populates the DB without errors.
-- [ ] `prisma studio` shows seeded user, companies, contacts (linked), activities, applications.
-- [ ] `prisma generate` runs clean; shared client imports without error.
-- [ ] Lint + format clean.
+- [x] `prisma migrate dev` completes; migration `20260629100019_init` under `server/prisma/migrations/`.
+- [x] `npm run db:seed` populates the DB without errors (2 companies, 4 contacts, 3 activities, 2 applications).
+- [x] Seeded user/companies/contacts (linked)/activities/applications verified via query (Acme→Dana,Sam · Globex→Priya · Jordan unlinked).
+- [x] `prisma generate` runs clean; shared client imports and connects without error.
+- [x] Lint + format clean; client `npm run build` passes.
 
-## Open decisions
+## Resolved decisions
 
-- `Contact.companyId` on delete → recommend `SetNull`.
+- `Contact.companyId` on delete → `SetNull` (chosen).
 - Seed user `passwordHash` is a placeholder until Phase 2.
-- Keep follow-up timers as server constants (no `Settings` model yet).
+- Follow-up timers stay as server constants (no `Settings` model yet).
+- **Prisma 7 deviations** (see spec → Implementation notes): driver-adapter-first
+  (`@prisma/adapter-pg`), legacy `prisma-client-js` generator for a JS project,
+  datasource URL + seed registered in `prisma.config.ts`.
 
 # History
 

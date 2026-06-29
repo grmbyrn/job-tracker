@@ -1,0 +1,105 @@
+// Prisma schema for Job Tracker — see context/features/phase-1-database-schema.md
+// Datasource URL is provided via prisma.config.ts (reads DATABASE_URL from .env).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  companies    Company[]
+  contacts     Contact[]
+  applications Application[]
+}
+
+model Company {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  name      String
+  link      String? // company page or job ad
+  contacted Int       @default(0) // stored for parity; derived count is source of truth (Phase 3)
+  createdAt DateTime  @default(now())
+  contacts  Contact[]
+}
+
+enum Lane {
+  Agency
+  Company
+  Freelance
+  Warm
+}
+
+enum Channel {
+  Email
+  LinkedIn
+  Instagram
+  WhatsApp
+  Form
+  InPerson
+  Other
+}
+
+enum Stage {
+  hit
+  sent
+  accepted
+  contacted
+  communication
+}
+
+model Contact {
+  id         String     @id @default(cuid())
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  company    Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  companyId  String?
+  name       String // person / org name
+  person     String? // contact person
+  personRole String? // their position / role
+  link       String?
+  lane       Lane
+  channel    Channel
+  stage      Stage      @default(hit)
+  firstDate  DateTime?
+  lastDate   DateTime? // drives the follow-up countdown
+  followups  Int        @default(0)
+  createdAt  DateTime   @default(now())
+  activities Activity[]
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String
+  type      String // "note" | "status_change" | "followup" | "reply"
+  body      String?
+  createdAt DateTime @default(now())
+}
+
+enum AppStatus {
+  applied
+  interview
+  offer
+  rejected
+}
+
+model Application {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  company     String
+  position    String?
+  link        String?
+  note        String?
+  appliedDate DateTime
+  status      AppStatus @default(applied)
+  createdAt   DateTime  @default(now())
+}
