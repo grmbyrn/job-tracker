@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Outreach Tracker</title>
+<style>
+  :root {
+    --bg: #faf9f5; --surface: #ffffff; --surface-2: #f1efe8;
+    --text: #2c2c2a; --text-2: #5f5e5a; --text-3: #888780;
+    --border: #e2e0d8; --border-2: #cfccc1;
+    --info-bg: #e6f1fb; --info: #185fa5;
+    --warn-bg: #faeeda; --warn: #854f0b; --warn-border: #ef9f27;
+    --ok-bg: #eaf3de; --ok: #3b6d11;
+    --radius: 10px; --radius-sm: 8px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1f1e1c; --surface: #2a2926; --surface-2: #34332f;
+      --text: #ededea; --text-2: #b4b2a9; --text-3: #888780;
+      --border: #3a3935; --border-2: #4a4843;
+      --info-bg: #0c447c; --info: #b5d4f4;
+      --warn-bg: #633806; --warn: #fac775; --warn-border: #ba7517;
+      --ok-bg: #27500a; --ok: #c0dd97;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .container { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 2px; }
+  .sub { color: var(--text-2); font-size: 14px; margin: 0 0 20px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+  .stat { background: var(--surface-2); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
+  .stat.alert { background: var(--warn-bg); }
+  .stat-num { font-size: 22px; font-weight: 600; }
+  .stat.alert .stat-num { color: var(--warn); }
+  .stat-lbl { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+  .stat.alert .stat-lbl { color: var(--warn); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab { font-size: 13px; padding: 7px 13px; cursor: pointer; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); user-select: none; }
+  .tab.active { background: var(--surface-2); border-color: var(--border-2); font-weight: 500; }
+  .tab .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 5px; font-size: 11px; line-height: 17px; text-align: center; background: var(--info-bg); color: var(--info); border-radius: 999px; }
+  .add { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+  .add-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  input, select, textarea, button { font-family: var(--font); font-size: 14px; }
+  input, select { flex: 1; min-width: 130px; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
+  input:focus, select:focus { outline: none; border-color: var(--info); }
+  .btn { padding: 9px 14px; border: 1px solid var(--border-2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); cursor: pointer; }
+  .btn:hover { background: var(--surface-2); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { width: 100%; background: var(--info-bg); color: var(--info); border-color: transparent; font-weight: 500; }
+  .btn-mini { padding: 5px 9px; font-size: 12px; }
+  .settings { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0 14px; margin-bottom: 20px; overflow: hidden; }
+  .settings summary { cursor: pointer; padding: 12px 0; font-size: 13px; color: var(--text-2); user-select: none; list-style: none; }
+  .settings summary::-webkit-details-marker { display: none; }
+  .settings summary::before { content: "\2699  "; }
+  .settings-body { padding: 4px 0 14px; }
+  .set-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+  .set-row label { flex: 1; color: var(--text-2); }
+  .set-row input { flex: 0 0 70px; min-width: 0; }
+  .section-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3); margin: 20px 0 8px; font-weight: 600; }
+  .section-label.alert { color: var(--warn); }
+  .item { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; background: var(--surface); }
+  .item.due { border-color: var(--warn-border); background: var(--warn-bg); }
+  .item.hit { background: var(--surface-2); border-style: dashed; }
+  .item.done { background: var(--ok-bg); border-color: transparent; }
+  .dots { letter-spacing: 2px; }
+  .avatar { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--info-bg); color: var(--info); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; }
+  .body { flex: 1; min-width: 0; }
+  .name { font-weight: 500; font-size: 14px; word-break: break-word; }
+  .meta { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+  .countdown { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); margin-left: 4px; }
+  .countdown.soon { background: var(--warn-bg); color: var(--warn); }
+  .pill { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); margin-left: 6px; }
+  .item.hit .pill { background: var(--surface); }
+  .stage { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+  .s-await { background: var(--surface-2); color: var(--text-2); }
+  .s-reply { background: var(--ok-bg); color: var(--ok); }
+  .s-applied { background: var(--info-bg); color: var(--info); }
+  .s-interview { background: var(--warn-bg); color: var(--warn); }
+  .s-offer { background: var(--ok-bg); color: var(--ok); }
+  .s-rejected { background: var(--surface-2); color: var(--text-3); }
+  .actions { display: flex; gap: 5px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .empty { font-size: 14px; color: var(--text-3); padding: 18px 0; text-align: center; }
+  .link { color: var(--info); text-decoration: none; }
+  .link:hover { text-decoration: underline; }
+  .toolbar { display: flex; gap: 8px; justify-content: flex-end; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .toolbar .btn { font-size: 12px; padding: 6px 11px; }
+  .hint { font-size: 12px; color: var(--text-3); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Outreach tracker</h1>
+  <p class="sub">your hitlist, your timers, and who to chase next.</p>
+  <div class="tabs viewswitch" id="viewtabs">
+    <div class="tab active" data-view="outreach">People &amp; outreach</div>
+    <div class="tab" data-view="apps">Applications <span class="badge" id="b-apps">0</span></div>
+    <div class="tab" data-view="targets">Target companies <span class="badge" id="b-targets">0</span></div>
+  </div>
+  <div id="view-outreach">
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="s-hit">0</div><div class="stat-lbl">to contact</div></div>
+    <div class="stat"><div class="stat-num" id="s-sent">0</div><div class="stat-lbl">waiting</div></div>
+    <div class="stat"><div class="stat-num" id="s-reply">0</div><div class="stat-lbl">in comms</div></div>
+    <div class="stat alert"><div class="stat-num" id="s-due">0</div><div class="stat-lbl">follow up now</div></div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-lane="all">All</div>
+    <div class="tab" data-lane="Agency">Agencies <span class="badge" id="b-Agency">0</span></div>
+    <div class="tab" data-lane="Company">Companies <span class="badge" id="b-Company">0</span></div>
+    <div class="tab" data-lane="Freelance">Freelance <span class="badge" id="b-Freelance">0</span></div>
+    <div class="tab" data-lane="Warm">Warm <span class="badge" id="b-Warm">0</span></div>
+  </div>
+  <div class="add">
+    <div class="add-row">
+      <input id="f-name" placeholder="name or company" />
+      <select id="f-lane">
+        <option value="Agency">Agency</option>
+        <option value="Company">Company / job</option>
+        <option value="Freelance">Freelance opportunity</option>
+        <option value="Warm">Warm contact</option>
+      </select>
+    </div>
+    <div class="add-row">
+      <input id="f-person" placeholder="contact person" />
+      <input id="f-person-role" placeholder="their position / role (optional)" />
+    </div>
+    <div class="add-row">
+      <select id="f-channel">
+        <option value="Email">Email</option>
+        <option value="LinkedIn">LinkedIn</option>
+        <option value="Instagram">Instagram</option>
+        <option value="WhatsApp">WhatsApp</option>
+        <option value="Form">Web form</option>
+        <option value="In person">In person</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="add-row">
+      <input id="f-link" placeholder="link, e.g. LinkedIn profile URL (optional)" />
+      <input id="f-note" placeholder="note (optional)" />
+    </div>
+    <div class="add-row">
+      <button class="btn btn-primary" id="add-hit" style="flex:2;">+ add to hitlist</button>
+      <button class="btn" id="add-sent" style="flex:1;">add as already contacted</button>
+    </div>
+  </div>
+  <details class="settings">
+    <summary>Follow-up timers (days before something needs a chase)</summary>
+    <div class="settings-body">
+      <div class="set-row"><label>Agencies</label><input type="number" min="1" max="60" id="t-Agency" /></div>
+      <div class="set-row"><label>Companies / jobs</label><input type="number" min="1" max="60" id="t-Company" /></div>
+      <div class="set-row"><label>Freelance / local business</label><input type="number" min="1" max="60" id="t-Freelance" /></div>
+      <div class="set-row"><label>Warm contacts (0 = never auto-surface)</label><input type="number" min="0" max="90" id="t-Warm" /></div>
+      <div class="set-row"><label>Max follow-ups before it stops chasing</label><input type="number" min="1" max="5" id="t-max" /></div>
+    </div>
+  </details>
+  <div id="list"></div>
+  </div>
+  <div id="view-apps" hidden>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="a-applied">0</div><div class="stat-lbl">applied</div></div>
+      <div class="stat"><div class="stat-num" id="a-interview">0</div><div class="stat-lbl">interviewing</div></div>
+      <div class="stat"><div class="stat-num" id="a-offer">0</div><div class="stat-lbl">offers</div></div>
+      <div class="stat"><div class="stat-num" id="a-rejected">0</div><div class="stat-lbl">rejected</div></div>
+    </div>
+    <div class="add">
+      <div class="add-row">
+        <input id="a-company" placeholder="company" />
+        <input id="a-position" placeholder="position / role" />
+      </div>
+      <div class="add-row">
+        <input id="a-link" placeholder="link to job ad (optional)" />
+        <input type="date" id="a-date" />
+      </div>
+      <div class="add-row">
+        <input id="a-note" placeholder="note (optional)" />
+      </div>
+      <div class="add-row">
+        <button class="btn btn-primary" id="add-app">+ add application</button>
+      </div>
+    </div>
+    <div id="applist"></div>
+  </div>
+  <div id="view-targets" hidden>
+    <div class="stats" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="stat"><div class="stat-num" id="tg-active">0</div><div class="stat-lbl">still working on</div></div>
+      <div class="stat"><div class="stat-num" id="tg-done">0</div><div class="stat-lbl">done (3 contacted)</div></div>
+    </div>
+    <div class="add">
+      <div class="add-row">
+        <input id="tg-name" placeholder="company you want to reach out to" />
+      </div>
+      <div class="add-row">
+        <input id="tg-link" placeholder="link to company page or job ad (optional)" />
+      </div>
+      <div class="add-row">
+        <button class="btn btn-primary" id="add-target">+ add company</button>
+      </div>
+    </div>
+    <div id="targetlist"></div>
+  </div>
+  <div class="toolbar">
+    <button class="btn" id="export">Export backup</button>
+    <button class="btn" id="import">Import backup</button>
+    <input type="file" id="file" accept="application/json" style="display:none" />
+  </div>
+  <p class="hint">Saved automatically in this browser. Export now and then to keep a backup or move it to another device.</p>
+</div>
+<script>
+const KEY = 'outreach_tracker_v2';
+const DEFAULT_TIMERS = { Agency:7, Company:7, Freelance:7, Warm:7, max:2 };
+let items = [];
+let apps = [];
+let targets = [];
+let timers = {...DEFAULT_TIMERS};
+const TARGET_GOAL = 3;
+const MSG_FOLLOWUP = 7;
+let lane = 'all';
+let view = 'outreach';
+function today(){ return new Date().toISOString().slice(0,10); }
+function daysSince(d){ return Math.floor((Date.now() - new Date(d+'T00:00:00').getTime())/86400000); }
+function initials(n){ const p=n.trim().split(/\s+/); return ((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase()||'?'; }
+function uid(){ return Date.now()+''+Math.floor(Math.random()*1000); }
+function waitFor(c){
+  if (c.status === 'contacted') return MSG_FOLLOWUP;
+  return timers[c.lane] != null ? timers[c.lane] : 7;
+}
+function daysLeft(c){ return waitFor(c) - daysSince(c.lastDate||c.firstDate); }
+function isDue(c){
+  if (c.status !== 'sent' && c.status !== 'contacted') return false;
+  if ((c.followups||0) >= (timers.max||2)) return false;
+  const w = waitFor(c);
+  if (w <= 0) return false;
+  return daysLeft(c) <= 0;
+}
+function looksLikeUrl(s){ return /^https?:\/\//i.test(s) || /\.(com|es|io|net|org|cat|dev|pro)\b/i.test(s); }
+function load(){
+  try {
+    const r = localStorage.getItem(KEY);
+    if (r){ const d = JSON.parse(r); items = d.items||[]; apps = d.apps||[]; targets = d.targets||[]; timers = {...DEFAULT_TIMERS, ...(d.timers||{})}; }
+  } catch(e){ items=[]; apps=[]; targets=[]; timers={...DEFAULT_TIMERS}; }
+  items.forEach(c=>{ if (c.status==='reply') c.status='accepted'; });
+  ['Agency','Company','Freelance','Warm'].forEach(l=>{ document.getElementById('t-'+l).value = timers[l]; });
+  document.getElementById('t-max').value = timers.max;
+  if (!document.getElementById('a-date').value) document.getElementById('a-date').value = today();
+  render();
+  renderApps();
+  renderTargets();
+}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify({items, apps, targets, timers})); } catch(e){} }
+function add(status){
+  const name = document.getElementById('f-name').value.trim();
+  if (!name){ document.getElementById('f-name').focus(); return; }
+  items.push({
+    id: uid(), name,
+    person: document.getElementById('f-person').value.trim(),
+    personRole: document.getElementById('f-person-role').value.trim(),
+    link: document.getElementById('f-link').value.trim(),
+    lane: document.getElementById('f-lane').value,
+    channel: document.getElementById('f-channel').value,
+    note: document.getElementById('f-note').value.trim(),
+    status,
+    firstDate: status==='sent'?today():null,
+    lastDate: status==='sent'?today():null,
+    followups: 0
+  });
+  document.getElementById('f-name').value='';
+  document.getElementById('f-person').value='';
+  document.getElementById('f-person-role').value='';
+  document.getElementById('f-link').value='';
+  document.getElementById('f-note').value='';
+  save(); render();
+}
+function render(){
+  const counts = { hit:0, sent:0, comm:0, due:0 };
+  const laneCounts = { Agency:0, Company:0, Freelance:0, Warm:0 };
+  items.forEach(c=>{
+    if (c.status==='hit') counts.hit++;
+    if ((c.status==='sent'||c.status==='contacted') && !isDue(c)) counts.sent++;
+    if (c.status==='communication') counts.comm++;
+    if (isDue(c)) counts.due++;
+    if (laneCounts[c.lane]!=null) laneCounts[c.lane]++;
+  });
+  document.getElementById('s-hit').textContent = counts.hit;
+  document.getElementById('s-sent').textContent = counts.sent;
+  document.getElementById('s-reply').textContent = counts.comm;
+  document.getElementById('s-due').textContent = counts.due;
+  ['Agency','Company','Freelance','Warm'].forEach(l=>{ document.getElementById('b-'+l).textContent = laneCounts[l]; });
+  let pool = items.filter(c => lane==='all' || c.lane===lane);
+  const list = document.getElementById('list');
+  if (!pool.length){
+    list.innerHTML = '<div class="empty">'+(items.length?'nothing in this lane yet.':'nothing yet \u2014 add your first target above.')+'</div>';
+    return;
+  }
+  const due = pool.filter(isDue);
+  const hit = pool.filter(c=>c.status==='hit');
+  const sent = pool.filter(c=>c.status==='sent' && !isDue(c)).sort((a,b)=>daysLeft(a)-daysLeft(b));
+  const accepted = pool.filter(c=>c.status==='accepted');
+  const contacted = pool.filter(c=>c.status==='contacted' && !isDue(c)).sort((a,b)=>daysLeft(a)-daysLeft(b));
+  const comm = pool.filter(c=>c.status==='communication');
+  let html = '';
+  if (due.length) html += group('\u23F0 Time to follow up', due, true);
+  if (hit.length) html += group('Hitlist \u2014 not contacted yet', hit, false);
+  if (sent.length) html += group('Waiting for connection to be accepted', sent, false);
+  if (accepted.length) html += group('Accepted \u2014 send them a message', accepted, false);
+  if (contacted.length) html += group('Contacted \u2014 waiting for reply', contacted, false);
+  if (comm.length) html += group('In communication', comm, false);
+  list.innerHTML = html;
+}
+function group(label, arr, alert){
+  let h = '<div class="section-label'+(alert?' alert':'')+'">'+label+'</div>';
+  arr.forEach(c=>{
+    const due = isDue(c);
+    const cls = c.status==='hit' ? 'item hit' : (due ? 'item due' : 'item');
+    let stage = '', countdown = '';
+    if (c.status==='sent'){
+      stage = '<span class="stage s-await">awaiting connection</span>';
+      if (due){ countdown = '<span class="countdown soon">chase now</span>'; }
+      else { const dl = daysLeft(c); countdown = '<span class="countdown'+(dl<=2?' soon':'')+'">'+dl+'d left</span>'; }
+    }
+    if (c.status==='contacted'){
+      stage = '<span class="stage s-applied">message sent</span>';
+      if (due){ countdown = '<span class="countdown soon">chase now</span>'; }
+      else { const dl = daysLeft(c); countdown = '<span class="countdown'+(dl<=2?' soon':'')+'">'+dl+'d left</span>'; }
+    }
+    if (c.status==='accepted') stage = '<span class="stage s-reply">accepted connection</span>';
+    if (c.status==='communication') stage = '<span class="stage s-offer">in communication</span>';
+    if (c.status==='hit') stage = 'on hitlist';
+    const fu = c.followups ? ' \u00b7 '+c.followups+' follow-up'+(c.followups>1?'s':'') : '';
+    const person = c.person ? ' \u00b7 \ud83d\udc64 '+escapeHtml(c.person)+(c.personRole?' ('+escapeHtml(c.personRole)+')':'') : '';
+    let link = '';
+    const linkSrc = c.link || (c.note && looksLikeUrl(c.note) ? c.note : '');
+    if (linkSrc) link = ' \u00b7 <a class="link" href="'+escapeHtml(/^https?:/i.test(linkSrc)?linkSrc:'https://'+linkSrc)+'" target="_blank" rel="noopener">link</a>';
+    let note = '';
+    if (c.note && c.note !== linkSrc) note = ' \u00b7 '+escapeHtml(c.note);
+    let acts = '';
+    if (c.status==='hit') acts += '<button class="btn btn-mini" data-act="sent" data-id="'+c.id+'">mark sent</button>';
+    if (c.status==='sent') acts += '<button class="btn btn-mini" data-act="accepted" data-id="'+c.id+'">accepted</button>';
+    if (c.status==='accepted') acts += '<button class="btn btn-mini" data-act="message" data-id="'+c.id+'">send message</button>';
+    if (c.status==='contacted') acts += '<button class="btn btn-mini" data-act="comm" data-id="'+c.id+'">replied</button>';
+    if (due) acts += '<button class="btn btn-mini" data-act="followed" data-id="'+c.id+'">did follow-up</button>';
+    acts += '<button class="btn btn-mini" data-act="del" data-id="'+c.id+'" title="delete">\u2715</button>';
+    h += '<div class="'+cls+'">'+
+      '<div class="avatar">'+initials(c.person||c.name)+'</div>'+
+      '<div class="body"><div class="name">'+escapeHtml(c.name)+'<span class="pill">'+c.channel+'</span>'+countdown+'</div>'+
+      '<div class="meta">'+stage+fu+person+link+note+'</div></div>'+
+      '<div class="actions">'+acts+'</div></div>';
+  });
+  return h;
+}
+function escapeHtml(s){ return s.replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+const APP_STATUSES = { applied:'applied', interview:'interviewing', offer:'offer', rejected:'rejected' };
+function addApp(){
+  const company = document.getElementById('a-company').value.trim();
+  const position = document.getElementById('a-position').value.trim();
+  if (!company){ document.getElementById('a-company').focus(); return; }
+  apps.push({
+    id: uid(), company, position,
+    link: document.getElementById('a-link').value.trim(),
+    note: document.getElementById('a-note').value.trim(),
+    appliedDate: document.getElementById('a-date').value || today(),
+    status: 'applied'
+  });
+  document.getElementById('a-company').value='';
+  document.getElementById('a-position').value='';
+  document.getElementById('a-link').value='';
+  document.getElementById('a-note').value='';
+  document.getElementById('a-date').value = today();
+  save(); renderApps();
+}
+function renderApps(){
+  const counts = { applied:0, interview:0, offer:0, rejected:0 };
+  apps.forEach(a=>{ if (counts[a.status]!=null) counts[a.status]++; });
+  document.getElementById('a-applied').textContent = counts.applied;
+  document.getElementById('a-interview').textContent = counts.interview;
+  document.getElementById('a-offer').textContent = counts.offer;
+  document.getElementById('a-rejected').textContent = counts.rejected;
+  document.getElementById('b-apps').textContent = apps.length;
+  const list = document.getElementById('applist');
+  if (!apps.length){
+    list.innerHTML = '<div class="empty">no applications yet — add one above.</div>';
+    return;
+  }
+  let html = '';
+  html += appGroup('Applied — waiting to hear back', apps.filter(a=>a.status==='applied'));
+  html += appGroup('Interviewing', apps.filter(a=>a.status==='interview'));
+  html += appGroup('Offers', apps.filter(a=>a.status==='offer'));
+  html += appGroup('Rejected / closed', apps.filter(a=>a.status==='rejected'));
+  list.innerHTML = html;
+}
+function appGroup(label, arr){
+  if (!arr.length) return '';
+  let h = '<div class="section-label">'+label+'</div>';
+  arr.sort((a,b)=>(b.appliedDate||'').localeCompare(a.appliedDate||''));
+  arr.forEach(a=>{
+    const stage = '<span class="stage s-'+a.status+'">'+APP_STATUSES[a.status]+'</span>';
+    const position = a.position ? ' · '+escapeHtml(a.position) : '';
+    let link = '';
+    if (a.link) link = ' · <a class="link" href="'+escapeHtml(/^https?:/i.test(a.link)?a.link:'https://'+a.link)+'" target="_blank" rel="noopener">job ad</a>';
+    let when = '';
+    if (a.appliedDate){ const d = daysSince(a.appliedDate); when = ' · applied '+a.appliedDate+' ('+(d<=0?'today':d+'d ago')+')'; }
+    const note = a.note ? ' · '+escapeHtml(a.note) : '';
+    let acts = '';
+    if (a.status==='applied'){ acts += '<button class="btn btn-mini" data-aact="interview" data-id="'+a.id+'">interview</button>'; acts += '<button class="btn btn-mini" data-aact="rejected" data-id="'+a.id+'">rejected</button>'; }
+    if (a.status==='interview'){ acts += '<button class="btn btn-mini" data-aact="offer" data-id="'+a.id+'">got offer</button>'; acts += '<button class="btn btn-mini" data-aact="rejected" data-id="'+a.id+'">rejected</button>'; }
+    if (a.status==='rejected'||a.status==='offer'){ acts += '<button class="btn btn-mini" data-aact="applied" data-id="'+a.id+'">reopen</button>'; }
+    acts += '<button class="btn btn-mini" data-aact="del" data-id="'+a.id+'" title="delete">✕</button>';
+    h += '<div class="item">'+
+      '<div class="avatar">'+initials(a.company)+'</div>'+
+      '<div class="body"><div class="name">'+escapeHtml(a.company)+'</div>'+
+      '<div class="meta">'+stage+position+link+when+note+'</div></div>'+
+      '<div class="actions">'+acts+'</div></div>';
+  });
+  return h;
+}
+document.getElementById('add-app').onclick = addApp;
+document.getElementById('applist').onclick = (e)=>{
+  const b = e.target.closest('button[data-aact]'); if(!b) return;
+  const a = apps.find(x=>x.id===b.dataset.id); if(!a) return;
+  const act = b.dataset.aact;
+  if (act==='del'){ apps = apps.filter(x=>x.id!==a.id); }
+  else { a.status = act; }
+  save(); renderApps();
+};
+function targetDone(t){ return (t.contacted||0) >= TARGET_GOAL; }
+function addTarget(){
+  const name = document.getElementById('tg-name').value.trim();
+  if (!name){ document.getElementById('tg-name').focus(); return; }
+  targets.push({ id: uid(), name, link: document.getElementById('tg-link').value.trim(), contacted: 0 });
+  document.getElementById('tg-name').value='';
+  document.getElementById('tg-link').value='';
+  save(); renderTargets();
+}
+function renderTargets(){
+  const active = targets.filter(t=>!targetDone(t));
+  const done = targets.filter(targetDone);
+  document.getElementById('tg-active').textContent = active.length;
+  document.getElementById('tg-done').textContent = done.length;
+  document.getElementById('b-targets').textContent = active.length;
+  const list = document.getElementById('targetlist');
+  if (!targets.length){
+    list.innerHTML = '<div class="empty">no target companies yet — add one above.</div>';
+    return;
+  }
+  let html = '';
+  html += targetGroup('Working on — reach out to 3 people', active);
+  html += targetGroup('Done — 3 people contacted', done);
+  list.innerHTML = html;
+}
+function targetGroup(label, arr){
+  if (!arr.length) return '';
+  let h = '<div class="section-label">'+label+'</div>';
+  arr.forEach(t=>{
+    const c = t.contacted||0;
+    const n = Math.min(c, TARGET_GOAL);
+    const done = targetDone(t);
+    const dots = '<span class="dots">'+'●'.repeat(n)+'○'.repeat(Math.max(0, TARGET_GOAL-n))+'</span>';
+    let link = '';
+    if (t.link) link = ' · <a class="link" href="'+escapeHtml(/^https?:/i.test(t.link)?t.link:'https://'+t.link)+'" target="_blank" rel="noopener">link</a>';
+    const meta = (done
+      ? '<span class="stage s-reply">✓ done</span> · '+c+' people contacted'
+      : dots+' · '+n+' / '+TARGET_GOAL+' people contacted') + link;
+    let acts = '';
+    if (!done) acts += '<button class="btn btn-mini" data-tact="inc" data-id="'+t.id+'">+ contacted</button>';
+    if (c>0) acts += '<button class="btn btn-mini" data-tact="dec" data-id="'+t.id+'">undo</button>';
+    acts += '<button class="btn btn-mini" data-tact="del" data-id="'+t.id+'" title="delete">✕</button>';
+    h += '<div class="item'+(done?' done':'')+'">'+
+      '<div class="avatar">'+initials(t.name)+'</div>'+
+      '<div class="body"><div class="name">'+escapeHtml(t.name)+'</div>'+
+      '<div class="meta">'+meta+'</div></div>'+
+      '<div class="actions">'+acts+'</div></div>';
+  });
+  return h;
+}
+document.getElementById('add-target').onclick = addTarget;
+document.getElementById('tg-name').addEventListener('keydown', (e)=>{ if(e.key==='Enter') addTarget(); });
+document.getElementById('targetlist').onclick = (e)=>{
+  const b = e.target.closest('button[data-tact]'); if(!b) return;
+  const t = targets.find(x=>x.id===b.dataset.id); if(!t) return;
+  const act = b.dataset.tact;
+  if (act==='inc') t.contacted = (t.contacted||0)+1;
+  if (act==='dec') t.contacted = Math.max(0, (t.contacted||0)-1);
+  if (act==='del') targets = targets.filter(x=>x.id!==t.id);
+  save(); renderTargets();
+};
+document.getElementById('viewtabs').onclick = (e)=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  document.querySelectorAll('#viewtabs .tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); view = t.dataset.view;
+  document.getElementById('view-outreach').hidden = view!=='outreach';
+  document.getElementById('view-apps').hidden = view!=='apps';
+  document.getElementById('view-targets').hidden = view!=='targets';
+};
+document.getElementById('add-hit').onclick = ()=>add('hit');
+document.getElementById('add-sent').onclick = ()=>add('sent');
+document.getElementById('list').onclick = (e)=>{
+  const b = e.target.closest('button[data-act]'); if(!b) return;
+  const c = items.find(x=>x.id===b.dataset.id); if(!c) return;
+  const a = b.dataset.act;
+  if (a==='sent'){ c.status='sent'; c.firstDate=today(); c.lastDate=today(); c.followups=0; }
+  if (a==='accepted'){ c.status='accepted'; }
+  if (a==='message'){ c.status='contacted'; c.firstDate=today(); c.lastDate=today(); c.followups=0; }
+  if (a==='comm'){ c.status='communication'; }
+  if (a==='followed'){ c.followups=(c.followups||0)+1; c.lastDate=today(); }
+  if (a==='del'){ items = items.filter(x=>x.id!==c.id); }
+  save(); render();
+};
+document.getElementById('tabs').onclick = (e)=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); lane = t.dataset.lane; render();
+};
+['Agency','Company','Freelance','Warm'].forEach(l=>{
+  document.getElementById('t-'+l).onchange = (e)=>{ timers[l] = Math.max(0, parseInt(e.target.value)||0); save(); render(); };
+});
+document.getElementById('t-max').onchange = (e)=>{ timers.max = Math.max(1, parseInt(e.target.value)||2); save(); render(); };
+document.getElementById('export').onclick = ()=>{
+  const blob = new Blob([JSON.stringify({items, apps, targets, timers}, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='outreach-backup-'+today()+'.json'; a.click();
+  URL.revokeObjectURL(url);
+};
+document.getElementById('import').onclick = ()=>document.getElementById('file').click();
+document.getElementById('file').onchange = (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ try {
+    const d = JSON.parse(r.result);
+    if (Array.isArray(d)) { items = d; }
+    else { items = d.items||[]; apps = d.apps||[]; targets = d.targets||[]; timers = {...DEFAULT_TIMERS, ...(d.timers||{})}; }
+    save(); load();
+  } catch(err){ alert('Could not read that file.'); } };
+  r.readAsText(f);
+};
+load();
+</script>
+</body>
+</html>

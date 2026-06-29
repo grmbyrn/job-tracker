@@ -1,0 +1,31 @@
+{
+  "name": "job-tracker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n client,server -c blue,green \"npm:dev:client\" \"npm:dev:server\"",
+    "dev:client": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "build": "npm run build --workspace client",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.0"
+  }
+}

@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: jobtracker-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jobtracker
+      POSTGRES_PASSWORD: jobtracker
+      POSTGRES_DB: jobtracker
+    ports:
+      # Host 5433 to avoid clashing with other local Postgres instances; container stays 5432.
+      - '5433:5432'
+    volumes:
+      - jobtracker-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jobtracker -d jobtracker']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  jobtracker-pgdata:

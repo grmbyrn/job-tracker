@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+coverage/
+*.md
+
+# Prototype (kept for reference / Phase 4 migration)
+/index.html
