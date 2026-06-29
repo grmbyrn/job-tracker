@@ -1,9 +1,12 @@
+import bcrypt from 'bcrypt';
 import { prisma } from '../src/db.js';
 
 // Dev seed data. Idempotent: clears this user's graph, then recreates it.
-// NOTE: passwordHash is a placeholder until Phase 2 (auth) wires up bcrypt.
+// The seed user gets a real bcrypt hash so the account can actually log in;
+// the plaintext dev password comes from SEED_USER_PASSWORD (see .env.example).
 const SEED_EMAIL = 'dev@jobtracker.local';
-const PLACEHOLDER_HASH = 'not-a-real-hash-set-in-phase-2';
+const SEED_PASSWORD = process.env.SEED_USER_PASSWORD || 'devpassword123';
+const BCRYPT_COST = 12;
 
 const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
@@ -11,8 +14,9 @@ async function main() {
   // Remove any prior seed user; cascades clear their companies/contacts/etc.
   await prisma.user.deleteMany({ where: { email: SEED_EMAIL } });
 
+  const passwordHash = await bcrypt.hash(SEED_PASSWORD, BCRYPT_COST);
   const user = await prisma.user.create({
-    data: { email: SEED_EMAIL, passwordHash: PLACEHOLDER_HASH },
+    data: { email: SEED_EMAIL, passwordHash },
   });
 
   const acme = await prisma.company.create({
@@ -138,6 +142,7 @@ async function main() {
   console.log(
     `Seeded ${SEED_EMAIL}: ${companies} companies, ${contacts} contacts, ${activities} activities, ${applications} applications.`,
   );
+  console.log(`Dev login: ${SEED_EMAIL} / ${SEED_PASSWORD}`);
 }
 
 main()
