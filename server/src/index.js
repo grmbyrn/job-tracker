@@ -5,6 +5,11 @@ import cookieParser from 'cookie-parser';
 import { prisma } from './db.js';
 import { authRouter } from './auth/routes.js';
 import { requireAuth } from './auth/middleware.js';
+import { companiesRouter } from './routes/companies.js';
+import { contactsRouter } from './routes/contacts.js';
+import { activitiesRouter } from './routes/activities.js';
+import { applicationsRouter } from './routes/applications.js';
+import { notFound, errorHandler } from './lib/http.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +40,16 @@ app.get('/api/me', requireAuth, async (req, res, next) => {
     next(err);
   }
 });
+
+// Core REST API (Phase 3) — every router is user-scoped behind requireAuth.
+app.use('/api/companies', requireAuth, companiesRouter);
+app.use('/api/contacts', requireAuth, contactsRouter);
+app.use('/api/activities', requireAuth, activitiesRouter);
+app.use('/api/applications', requireAuth, applicationsRouter);
+
+// 404 for unmatched routes, then the centralized error handler (must be last).
+app.use(notFound);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
