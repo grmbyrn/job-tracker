@@ -5,7 +5,7 @@
 
 | Field       | Value                                                              |
 | ----------- | ----------------------------------------------------------------- |
-| Status      | Implemented (2026-07-01) — API verified end-to-end; live UI click-through pending |
+| Status      | Completed (2026-07-01, PR #5) — API verified end-to-end; one residual live UI click-through pending |
 | Branch      | `feature/feature-parity`                                          |
 | Roadmap ref | Phase 6                                                           |
 | Depends on  | Phase 5 (app shell, router, `auth` store, authenticated API client) |

@@ -7,10 +7,17 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -20,10 +27,14 @@
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "prisma": "^7.8.0"
+    "prisma": "^7.8.0",
+    "supertest": "^7.0.0",
+    "vitest": "^3.0.0"
   }
 }
