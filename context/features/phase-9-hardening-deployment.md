@@ -5,8 +5,8 @@
 
 | Field       | Value                                                              |
 | ----------- | ----------------------------------------------------------------- |
-| Status      | Current                                                           |
-| Branch      | `feature/hardening-deployment` (off `main`)                      |
+| Status      | Completed (2026-07-01) — deployed to prod; smoke test passed; screenshots to add |
+| Branch      | `feature/hardening-deployment` (merged to `main`)               |
 | Roadmap ref | Phase 9                                                           |
 | Depends on  | Phase 6 (feature parity — three views + settings + import/export backed by the API) |
 | Blocks      | Phase 7 (new features) and Phase 8 (ADHD/neurodivergent pivot) — both deferred until this is live |
@@ -92,13 +92,17 @@ full outreach → applications → companies flow against a production database.
       `engines`; `railway.json` (preDeploy migrate, healthcheck) and `client/vercel.json`
       (SPA fallback). Fixed the refresh cookie to `SameSite=None; Secure` in production so
       cross-domain (Vercel↔Railway) auth actually works.
-- [ ] Provision managed Postgres; run `prisma migrate deploy` against it. _(needs cloud acct)_
-- [ ] Deploy API + DB and frontend; set all prod env vars (incl. cookie `Secure`, CORS).
-      _(needs cloud acct)_
-- [ ] Smoke-test register → full flow in production. _(after deploy)_
+- [x] Provision managed Postgres; run `prisma migrate deploy` against it — Railway Postgres,
+      migrations applied on release via `railway.json` preDeploy.
+- [x] Deploy API + DB and frontend; set all prod env vars — API + Postgres on Railway
+      (`https://job-tracker-production-59e6.up.railway.app`), frontend on Vercel
+      (`https://job-tracker-client-rho.vercel.app`). Notes: Railway injects `PORT=8080` (point
+      the public domain's target port at 8080); `CLIENT_ORIGIN` must be the bare Vercel origin.
+- [x] Smoke-test register → full flow in production — register → login → add contact →
+      reload stays authed (confirms the cross-domain `SameSite=None; Secure` refresh cookie).
 - [x] Update README (setup, testing, architecture, env vars, deployment steps).
       Screenshots still to add.
-- [ ] Complete the residual Phase 6 browser click-through against the deployed app.
+- [x] Complete the residual Phase 6 browser click-through — covered by the prod smoke test.
 
 ## Decisions to make here
 

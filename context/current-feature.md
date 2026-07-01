@@ -1,53 +1,67 @@
 # Current feature
 
-**Hardening & deployment — Phase 9** (Not started)
+**New features — Phase 7** (Not started)
 
-> Spec: [features/phase-9-hardening-deployment.md](features/phase-9-hardening-deployment.md) ·
-> Roadmap: [roadmap.md](roadmap.md) (Phase 9)
+> Spec: [features/phase-7-new-features.md](features/phase-7-new-features.md) ·
+> Roadmap: [roadmap.md](roadmap.md) (Phase 7)
 
 ## Goal
 
-Ship it. Take the feature-complete app from Phase 6 and make it production-worthy —
-tested, secured, and deployed to a live URL with managed Postgres. End state: a public
-URL where a new user can register and run the full outreach → applications → companies
-flow against a production database.
-
-> **Deploying first.** The roadmap runs 7 → 8 → 9, but Phase 7 (new features) and Phase 8
-> (the ADHD/neurodivergent pivot) are additive and can layer onto a live app, so they are
-> deferred. We ship the parity build now to get real usage, a demoable URL, and a
-> production baseline before building on it.
+The value-add beyond a straight port, layered onto the now-live app: an activity timeline
+per contact, real follow-up reminders (scheduled job + email), and search/filter across the
+data. End state: a user can see a dated history on each contact, receive a gentle email
+digest of who to chase, and find records fast.
 
 ## Branch
 
-`feature/hardening-deployment` (off `main`).
+`feature/new-features` (off `main`).
 
 ## Scope (this feature)
 
-- **Tests:** API integration tests (Vitest + Supertest) for auth + core CRUD/stage flows;
-  a few Vue component tests on the key views; wire `test` scripts.
-- **Security pass:** `helmet`, rate limiting on auth (`express-rate-limit`), env-driven
-  CORS allowlist, validation audit across routes, secrets only in env.
-- **Production builds & config:** client build with API base URL from env; server prod
-  start path; dev vs prod environment configs.
-- **Managed database:** provision managed Postgres; run `prisma migrate deploy`.
-- **Deployment:** deploy API + DB (Railway/Render/Fly) and frontend (Vercel/Netlify);
-  set prod env vars; smoke-test register → full flow in production.
-- **Docs:** README with setup, architecture diagram, env vars, and screenshots.
+- **7a. Activity timeline:** contact detail view/drawer showing a dated activity feed;
+  add note / log interaction; stage changes and follow-ups already auto-log (Phase 3),
+  so this mostly surfaces `Activity` rows and adds the note-entry UI.
+- **7b. Real reminders:** `node-cron` daily job that finds contacts whose follow-up timer
+  has expired (reuse `isDue`) and emails the user a digest; `nodemailer` (Mailtrap/Ethereal
+  in dev); per-user toggle; track `lastRemindedAt` to avoid duplicate sends.
+- **7c. Search & filter:** search endpoint(s) across contacts/companies/applications
+  (Postgres `ILIKE`); debounced search bar + filter controls (lane, stage, status) in the UI.
 
 ## Acceptance criteria
 
-- [x] `npm test` runs green: auth + core API integration tests (21) and client tests (16).
-- [x] Security middleware in place (helmet, auth rate limiting, env-driven CORS allowlist);
-      no secrets in the repo; validation confirmed on every route.
-- [x] Production builds succeed for client and server with prod env config (client build
-      clean; `railway.json` + `client/vercel.json` + prod scripts in place).
-- [ ] Managed Postgres provisioned and migrated (`prisma migrate deploy`) _(needs cloud acct)_.
-- [ ] App deployed at a live URL; register → outreach/applications/companies flow works
-      end-to-end in production (smoke-tested) _(needs cloud acct)_.
-- [x] README documents setup, testing, architecture, env vars, and deployment steps
-      (screenshots still to add).
+- [ ] Contact detail surfaces a dated activity timeline; adding a note logs an `Activity`.
+- [ ] A scheduled job emails a follow-up digest for due contacts (test email arrives);
+      per-user toggle honored; no duplicate sends.
+- [ ] Search returns matching contacts/companies/applications; filters narrow the lists.
+- [ ] Tests cover the new endpoints; lint/format + build clean.
 
 # History
+
+- 2026-07-01 — **Hardening & deployment — Phase 9** (Completed). Shipped the Phase 6
+  parity build to production, deploy-first (Phases 7–8 deferred). **Tests:** stood up
+  Vitest — 21 server integration tests (Supertest) for auth (+ error paths), contacts
+  CRUD/stage/followup, and applications, all with user-scoping checks, run against an
+  isolated `test` **schema** in the dev Postgres (derived from `DATABASE_URL`, migrated
+  once in `globalSetup`, truncated per-test via cascading `user.deleteMany()`); plus 16
+  client tests (Vitest + @vue/test-utils/jsdom) covering `format` utils, the `useCollection`
+  composable (guards the Phase 6 envelope-key fix), and `LoginView`. Split `index.js` into
+  `app.js` (`createApp()`, no listener) + a thin entry so Supertest can import the app.
+  **Security:** `helmet`, `express-rate-limit` on `/api/auth` (skipped under test), and an
+  env-driven CORS **allowlist** (comma-separated `CLIENT_ORIGIN`, `trust proxy`); validation
+  audit confirmed every mutating route carries a `validate()` zod schema; no secrets tracked.
+  **Prod config:** client already env-driven via `VITE_API_URL`; added `db:deploy`
+  (migrate on release), `postinstall` (prisma generate), `engines`, `railway.json`
+  (preDeploy migrate + `/api/health` check), and `client/vercel.json` (SPA fallback for
+  Vue Router history mode). **Fixed a real cross-domain bug:** the refresh cookie is now
+  `SameSite=None; Secure` when `NODE_ENV=production`, so the Vercel↔Railway session
+  survives reloads. **Deployed:** API + managed Postgres on **Railway**
+  (`https://job-tracker-production-59e6.up.railway.app`), frontend on **Vercel**
+  (`https://job-tracker-client-rho.vercel.app`); prod smoke test passed (register → login →
+  add contact → reload stays authed). Deploy gotchas captured: Railway injects `PORT=8080`
+  (point the domain's target port at 8080) and `CLIENT_ORIGIN` must be the bare origin.
+  README updated with testing/architecture/deployment; screenshots still to add. Tests,
+  lint, format, and build all clean. Spec:
+  [features/phase-9-hardening-deployment.md](features/phase-9-hardening-deployment.md).
 
 - 2026-07-01 — **Feature parity with the prototype — Phase 6** (Completed — API verified
   end-to-end; one residual live-UI browser click-through pending). Filled the Phase 5 shell

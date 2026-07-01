@@ -3,6 +3,9 @@
 Full-stack job-application & outreach tracker — migrating the single-file
 `index.html` prototype into a Vue + Node/Express + Postgres app.
 
+**Live:** [job-tracker-client-rho.vercel.app](https://job-tracker-client-rho.vercel.app)
+· API: [job-tracker-production-59e6.up.railway.app](https://job-tracker-production-59e6.up.railway.app/api/health)
+
 See [context/roadmap.md](context/roadmap.md) for the phased plan and
 [context/current-feature.md](context/current-feature.md) for the active feature.
 
