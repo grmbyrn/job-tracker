@@ -73,6 +73,26 @@ export const createActivitySchema = z
   })
   .strict();
 
+// --- Settings (Phase 6) ---
+// Per-user follow-up timers. All fields optional so the client can save a subset;
+// the route merges over the stored/default timers. Lane timers allow 0 (Warm's
+// "never auto-surface"); `max` is at least 1.
+const dayTimer = z.number().int().min(0).max(365);
+export const updateTimersSchema = z
+  .object({
+    Agency: dayTimer,
+    Company: dayTimer,
+    Freelance: dayTimer,
+    Warm: dayTimer,
+    max: z.number().int().min(1).max(20),
+  })
+  .partial()
+  .refine((obj) => Object.keys(obj).length > 0, {
+    message: 'Provide at least one timer to update.',
+  });
+
+export const updateSettingsSchema = z.object({ timers: updateTimersSchema }).strict();
+
 // --- Applications ---
 export const createApplicationSchema = z
   .object({

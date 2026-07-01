@@ -9,6 +9,7 @@ import { companiesRouter } from './routes/companies.js';
 import { contactsRouter } from './routes/contacts.js';
 import { activitiesRouter } from './routes/activities.js';
 import { applicationsRouter } from './routes/applications.js';
+import { settingsRouter } from './routes/settings.js';
 import { importRouter } from './routes/import.js';
 import { notFound, errorHandler } from './lib/http.js';
 
@@ -47,6 +48,7 @@ app.use('/api/companies', requireAuth, companiesRouter);
 app.use('/api/contacts', requireAuth, contactsRouter);
 app.use('/api/activities', requireAuth, activitiesRouter);
 app.use('/api/applications', requireAuth, applicationsRouter);
+app.use('/api/settings', requireAuth, settingsRouter);
 
 // Prototype data migration (Phase 4) — restore an "Export backup" JSON.
 app.use('/api/import', requireAuth, importRouter);

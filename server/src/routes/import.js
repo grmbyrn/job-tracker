@@ -62,6 +62,23 @@ importRouter.post(
           await tx.application.createMany({ data: apps.map((a) => ({ ...a, userId })) });
         }
 
+        // Persist the backup's follow-up timers onto the user (Phase 6 added the
+        // Settings home the Phase 4 note anticipated). Merged over what's stored.
+        if (timers && Object.keys(timers).length) {
+          const user = await tx.user.findUnique({
+            where: { id: userId },
+            select: { followupTimers: true },
+          });
+          const current =
+            user?.followupTimers && typeof user.followupTimers === 'object'
+              ? user.followupTimers
+              : {};
+          await tx.user.update({
+            where: { id: userId },
+            data: { followupTimers: { ...current, ...timers } },
+          });
+        }
+
         return {
           companies: targets.length,
           contacts: items.length,
@@ -77,9 +94,8 @@ importRouter.post(
     res.status(201).json({
       mode,
       imported,
-      // Per-user timer settings have no home yet (Settings model lands in Phase 6),
-      // so we echo them back un-persisted rather than silently dropping them.
-      timersIgnored: timers ?? null,
+      // Timers are now persisted onto the user (Phase 6); echo what was applied.
+      timers: timers ?? null,
     });
   }),
 );
