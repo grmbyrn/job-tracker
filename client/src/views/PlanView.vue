@@ -125,8 +125,9 @@ async function addTask() {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 18px;
   margin: 16px 0;
+  box-shadow: var(--shadow-sm);
 }
 .progress-top {
   display: flex;
@@ -135,9 +136,11 @@ async function addTask() {
   gap: 12px;
 }
 .points-num {
-  font-size: 2rem;
+  font-family: var(--font-display);
+  font-size: 2.1rem;
   font-weight: 700;
   line-height: 1;
+  color: var(--primary);
 }
 .points-lbl {
   color: var(--text-3);
@@ -157,7 +160,7 @@ async function addTask() {
 }
 .bar-fill {
   height: 100%;
-  background: var(--ok);
+  background: linear-gradient(90deg, var(--accent), var(--primary));
   transition: width 0.3s ease;
 }
 .count {
@@ -220,9 +223,9 @@ async function addTask() {
   opacity: 0.7;
 }
 .badge.earned {
-  background: var(--ok-bg);
-  color: var(--ok);
-  border-color: var(--ok);
+  background: var(--primary-soft);
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--primary) 45%, transparent);
   opacity: 1;
 }
 .badge-num {

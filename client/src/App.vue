@@ -109,7 +109,9 @@ async function onImportFile(event) {
 <template>
   <header v-if="auth.isAuthenticated" class="app-header">
     <div class="app-header-inner">
-      <span class="brand">Outreach tracker</span>
+      <RouterLink :to="{ name: 'plan' }" class="brand">
+        <span class="brand-logo">✓</span> Job Tracker
+      </RouterLink>
       <nav class="nav">
         <RouterLink :to="{ name: 'plan' }">Today</RouterLink>
         <RouterLink :to="{ name: 'outreach' }">People</RouterLink>
