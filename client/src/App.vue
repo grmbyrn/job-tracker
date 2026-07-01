@@ -111,6 +111,7 @@ async function onImportFile(event) {
     <div class="app-header-inner">
       <span class="brand">Outreach tracker</span>
       <nav class="nav">
+        <RouterLink :to="{ name: 'plan' }">Today</RouterLink>
         <RouterLink :to="{ name: 'outreach' }">People</RouterLink>
         <RouterLink :to="{ name: 'applications' }">Applications</RouterLink>
         <RouterLink :to="{ name: 'companies' }">Companies</RouterLink>

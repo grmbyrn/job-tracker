@@ -11,6 +11,7 @@ import { contactsRouter } from './routes/contacts.js';
 import { activitiesRouter } from './routes/activities.js';
 import { applicationsRouter } from './routes/applications.js';
 import { settingsRouter } from './routes/settings.js';
+import { planRouter } from './routes/plan.js';
 import { importRouter } from './routes/import.js';
 import { notFound, errorHandler } from './lib/http.js';
 
@@ -81,6 +82,9 @@ export function createApp() {
   app.use('/api/activities', requireAuth, activitiesRouter);
   app.use('/api/applications', requireAuth, applicationsRouter);
   app.use('/api/settings', requireAuth, settingsRouter);
+
+  // Daily Plan checklist + milestone badges (Phase 8, 8a).
+  app.use('/api/plan', requireAuth, planRouter);
 
   // Prototype data migration (Phase 4) — restore an "Export backup" JSON.
   app.use('/api/import', requireAuth, importRouter);

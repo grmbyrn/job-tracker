@@ -223,6 +223,9 @@ model Application {
 
 ## Phase 7 — New features
 
+> **Deferred (2026-07-01):** set aside to pivot to the ADHD/neurodivergent focus first
+> (Phase 8). Revisit after the Daily Plan ships. 8a deliberately doesn't depend on 7b's cron.
+
 **Goal:** the value-add beyond a straight port.
 
 ### 7a. Activity timeline
@@ -254,12 +257,25 @@ so this phase reduces executive-function load, softens rejection sensitivity (RS
 and rewards effort over outcomes. **This marks the product pivot and the niche the
 app is built around.**
 
-> These are **stretch goals**: each builds on the Phase 5–7 foundation (pipeline,
-> `isDue` / `daysLeft`, follow-up timers, activity timeline, reminders) and can ship
-> independently, so tackle the highest-leverage ones first. Recommended starting
-> point: **8a ("Now" mode)** — the clearest differentiator and the smallest build.
+> The checklist (**8a**) is the pivot's lead build and the current feature; the rest (8b–8g)
+> build on the Phase 5–6 foundation (pipeline, `isDue` / `daysLeft`, follow-up timers) and
+> can ship independently. Phase 7 (timeline / reminders / search) is **deferred** so the
+> pivot lands first — 8a deliberately doesn't depend on the Phase 7 reminder cron.
 
-### 8a. "Now" mode — one next action
+### 8a. Daily Plan & milestone badges — the pivot's lead feature
+- [ ] A **daily planning checklist** that starts empty each day and **clears at midnight**:
+      the user brain-dumps the tasks they mean to do, then checks them off — externalizing
+      the plan so it isn't held in working memory.
+- [ ] **One point per cleared day:** if the list held at least one task and *every* task is
+      done at midnight, the day earns a point. An empty (nothing-added) or partly-done list
+      earns nothing — but nothing is punished; the next day just starts fresh.
+- [ ] **Cumulative points → milestone badges** at 1, 5, 10, 30, 50, 75, 100 days, then every
+      +50 to 1000, then every +1000 — each a badge shown in its own achievements area. Missing a
+      day never resets progress (cumulative, not a streak — avoids broken-streak shame; see 8g).
+- [ ] Day rollover is evaluated **lazily on load** (finalize any past days, award due points),
+      so this ships without the deferred Phase 7 reminder cron.
+
+### 8b. "Now" mode — one next action
 - [ ] A focus view that surfaces a **single** card ("follow up with Jo at Acme") with
       one primary action (Done) + Snooze — instead of the full pipeline, which is a
       wall of choices that stalls task initiation.
@@ -268,37 +284,39 @@ app is built around.**
 - [ ] Snooze bumps `lastDate` (or a dedicated `snoozedUntil`) so the item drops out
       of "now" for a while without guilt.
 
-### 8b. Effort metrics + gentle rejection handling (RSD)
+### 8c. Effort metrics + gentle rejection handling (RSD)
 - [ ] Track and celebrate **actions taken** (messages sent, follow-ups, people added)
       per week — effort, not outcomes (which arrive slowly and are mostly "no").
 - [ ] Make rejections low-ceremony: auto-collapse a "closed" group; no red pile.
 - [ ] Cap the "follow up now" surface to the top few items so it nudges rather than
       shames when the backlog grows.
 
-### 8c. Frictionless capture (brain dump)
+### 8d. Frictionless capture (brain dump)
 - [ ] A single quick-add box: type a name, hit enter, categorize later — only a name
       required (defer lane/channel), so capturing never gets blocked on decisions.
 - [ ] An "inbox" of uncategorized captures to triage when there's energy for it.
 
-### 8d. Outreach sprints (body-doubling / Pomodoro)
+### 8e. Outreach sprints (body-doubling / Pomodoro)
 - [ ] A bounded focus timer ("chase 3 people in 20 minutes") that turns vague dread
       into a finite, startable task; pairs naturally with "Now" mode.
 - [ ] Roll what got done in the sprint into the effort metrics (8b).
 
-### 8e. Message templates / snippets
+### 8f. Message templates / snippets
 - [ ] Per-stage / per-channel copyable snippets ("connection accepted → send this")
       so composing from a blank page isn't the blocker.
 - [ ] Optional token fill (name, role, company) pulled from the contact.
 
-### 8f. Gentle, time-aware nudges
+### 8g. Gentle, time-aware nudges
 - [ ] Frame the Phase 7b reminder digest kindly ("3 small things waiting"), never
       "OVERDUE" — avoid the guilt spiral and broken-streak shame.
 - [ ] Concrete time language over relative ("by Thursday" instead of "2 days left")
       to counter time-blindness.
 - [ ] Per-user tone / intensity setting for nudges.
 
-**Deliverable:** first-run lands in "Now" mode with one clear action; a week of
-activity shows an effort summary; rejections stay quiet.
+**Deliverable:** a working **Daily Plan** — plan today's tasks, check them off, and earn a
+point for a fully-cleared day, with milestone badges (1/5/10/30/50/75/100 days) accumulating
+in an achievements area. Later sub-features: first-run lands in "Now" mode with one clear
+action; a week of activity shows an effort summary; rejections stay quiet.
 
 ---
 

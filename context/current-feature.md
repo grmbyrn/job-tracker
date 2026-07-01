@@ -1,41 +1,51 @@
 # Current feature
 
-**New features — Phase 7** (Not started)
+**ADHD/ND pivot — Phase 8, lead feature: Daily Plan & milestone badges** (Not started)
 
-> Spec: [features/phase-7-new-features.md](features/phase-7-new-features.md) ·
-> Roadmap: [roadmap.md](roadmap.md) (Phase 7)
+> Spec: [features/phase-8-daily-plan-milestones.md](features/phase-8-daily-plan-milestones.md) ·
+> Roadmap: [roadmap.md](roadmap.md) (Phase 8 · 8a)
 
 ## Goal
 
-The value-add beyond a straight port, layered onto the now-live app: an activity timeline
-per contact, real follow-up reminders (scheduled job + email), and search/filter across the
-data. End state: a user can see a dated history on each contact, receive a gentle email
-digest of who to chase, and find records fast.
+Kick off the ADHD/neurodivergent pivot with a **Daily Plan**: a checklist that starts empty
+each day and clears at midnight. The user brain-dumps the tasks they mean to do and checks
+them off — externalizing the plan instead of holding it in working memory. Clear the whole
+list (≥1 task, all done) and the day earns **one point**; points accumulate toward **milestone
+badges** at 1, 5, 10, 30, 50, 75, 100 (+) days, each shown in its own achievements area.
+Points are **cumulative, not a streak** — a missed day adds nothing but never resets progress.
 
 ## Branch
 
-`feature/new-features` (off `main`).
+`feature/daily-plan` (off `main`).
 
 ## Scope (this feature)
 
-- **7a. Activity timeline:** contact detail view/drawer showing a dated activity feed;
-  add note / log interaction; stage changes and follow-ups already auto-log (Phase 3),
-  so this mostly surfaces `Activity` rows and adds the note-entry UI.
-- **7b. Real reminders:** `node-cron` daily job that finds contacts whose follow-up timer
-  has expired (reuse `isDue`) and emails the user a digest; `nodemailer` (Mailtrap/Ethereal
-  in dev); per-user toggle; track `lastRemindedAt` to avoid duplicate sends.
-- **7c. Search & filter:** search endpoint(s) across contacts/companies/applications
-  (Postgres `ILIKE`); debounced search bar + filter controls (lane, stage, status) in the UI.
+- **Daily checklist:** per-user, per-day plan (`DailyPlan` + `PlanTask`); quick-add box,
+  check/uncheck, edit, delete; starts empty each new day. Today's plan only in the UI.
+- **Point on a cleared day:** at day rollover, a plan with ≥1 task where *every* task is done
+  earns exactly one point; empty or partly-done days earn none and are not punished. Rollover
+  is evaluated **lazily on load** (finalize past days + award due points) — no Phase 7 cron.
+- **Milestone badges:** cumulative points drive a fixed badge ladder (1/5/10/30/50/75/100…),
+  rendered in an achievements area with the next milestone's progress and a gentle unlock
+  celebration. Missing days never remove earned badges.
 
 ## Acceptance criteria
 
-- [ ] Contact detail surfaces a dated activity timeline; adding a note logs an `Activity`.
-- [ ] A scheduled job emails a follow-up digest for due contacts (test email arrives);
-      per-user toggle honored; no duplicate sends.
-- [ ] Search returns matching contacts/companies/applications; filters narrow the lists.
-- [ ] Tests cover the new endpoints; lint/format + build clean.
+- [ ] Plan starts empty each day; tasks add/check/uncheck/edit/delete and persist, user-scoped.
+- [ ] A day with ≥1 task all done awards exactly one point at rollover; empty/partial days award
+      none; no double-award; a missed day never reduces points or badges.
+- [ ] Cumulative points render the badge ladder (1/5/10/30/50/75/100…); the next milestone shows
+      progress; unlocking a badge celebrates gently.
+- [ ] Supertest covers the finalize/award logic + task CRUD; lint/format + build clean.
 
 # History
+
+- 2026-07-01 — **New features — Phase 7** (Deferred — superseded by the pivot). Timeline /
+  reminders / search were never started; set aside to pivot the product to its
+  ADHD/neurodivergent niche (Phase 8) now that Phase 9 shipped the parity build to prod.
+  The Daily Plan (8a) deliberately avoids depending on 7b's `node-cron` reminder job, so
+  Phase 7 can be revisited later without blocking the pivot. Spec kept for when it returns:
+  [features/phase-7-new-features.md](features/phase-7-new-features.md).
 
 - 2026-07-01 — **Hardening & deployment — Phase 9** (Completed). Shipped the Phase 6
   parity build to production, deploy-first (Phases 7–8 deferred). **Tests:** stood up

@@ -20,6 +20,7 @@ model User {
   companies    Company[]
   contacts     Contact[]
   applications Application[]
+  dailyPlans   DailyPlan[]
 }
 
 model Company {
@@ -105,4 +106,31 @@ model Application {
   appliedDate DateTime
   status      AppStatus @default(applied)
   createdAt   DateTime  @default(now())
+}
+
+// One per user per calendar day (the day is the user's *local* date). The plan
+// starts empty each day; clearing it (>=1 task, all done) earns a point at
+// midnight — see server/src/domain/dailyPlan.js. Phase 8 (8a).
+model DailyPlan {
+  id          String     @id @default(cuid())
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  date        DateTime   @db.Date // the user's local calendar day this plan is for
+  pointEarned Boolean    @default(false) // set at finalize: true if >=1 task and all done
+  finalizedAt DateTime? // when the day was rolled over / evaluated (null = still open)
+  createdAt   DateTime   @default(now())
+  tasks       PlanTask[]
+
+  @@unique([userId, date]) // one plan per user per day
+}
+
+model PlanTask {
+  id        String    @id @default(cuid())
+  plan      DailyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId    String
+  title     String
+  done      Boolean   @default(false)
+  doneAt    DateTime?
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
 }
