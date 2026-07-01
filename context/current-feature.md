@@ -1,32 +1,59 @@
 # Current feature
 
-**Core REST API — Phase 3** (Not started)
+**Migrate existing data — Phase 4** (Implemented — pending PR)
 
-> Spec: _to be written_ (`features/phase-3-rest-api.md`) ·
-> Roadmap: [roadmap.md](roadmap.md) (Phase 3)
+> Spec: [features/phase-4-migrate-data.md](features/phase-4-migrate-data.md) ·
+> Roadmap: [roadmap.md](roadmap.md) (Phase 4)
 
 ## Goal
 
-Full user-scoped CRUD for every entity (companies, contacts, activities,
-applications), built on the `requireAuth` middleware + `req.userId` from Phase 2.
+Restore the prototype's localStorage "Export backup" JSON into Postgres so no
+outreach/application history is lost in the migration, via a user-scoped
+`POST /api/import` built on the Phase 3 models.
 
 ## Branch
 
-`feature/rest-api` (off `main`) — _not yet created_.
+`feature/data-import` (off `main`).
 
 ## Scope (this feature)
 
-- Companies / Contacts / Activities / Applications CRUD, all scoped by `req.userId`.
-- Pipeline transition that stamps `firstDate`/`lastDate`, resets `followups`, logs an `Activity`.
-- Centralized error handling + request validation (`zod` or `express-validator`).
-- Port prototype business logic (`isDue`, `daysLeft`, lane timers, 7-day message timer) into server helpers.
+- `POST /api/import?mode=merge|replace` behind `requireAuth`, scoped by `req.userId`,
+  accepting the prototype's verbatim `{ items, apps, targets, timers }` backup.
+- Mapping: `targets` → `Company`, `items` → `Contact` (`status` → `stage`, legacy
+  `reply` → `accepted`, free-text `note` → a `note` `Activity`), `apps` → `Application`.
+- Link contacts to companies by matching `name`; whole import runs in one transaction.
+- `timers` echoed back but not persisted (no Settings model yet — Phase 6).
 
 ## Acceptance criteria
 
-- [ ] Every route is mounted behind `requireAuth` and filters by `req.userId`.
-- [ ] A collection (Postman/Thunder) exercises every route successfully.
+- [x] A prototype backup file imports cleanly; counts + pipeline stages match the source.
+- [x] Route is behind `requireAuth` and scoped by `req.userId`; `mode=replace` is a
+      clean restore, `mode=merge` appends.
+- [x] Postman collection exercises the import route successfully; lint/format + client build clean.
+
+_Implemented and verified end-to-end via curl (2026-07-01); pending PR on
+`feature/data-import`._
 
 # History
+
+- 2026-07-01 — **Core REST API — Phase 3** (Completed). Full user-scoped CRUD for
+  Companies, Contacts, Activities, and Applications, all behind `requireAuth` and
+  filtered by `req.userId`. Added `zod` request validation via a `validate(schema)`
+  middleware (`server/src/lib/validate.js`) plus per-entity schemas
+  (`server/src/validation/schemas.js`), and centralized HTTP infra
+  (`server/src/lib/http.js`: `asyncHandler`, `ApiError`, `notFound`, and an
+  `errorHandler` mapping `ApiError`/`ZodError`/Prisma `P2025`+`P2003` to clean JSON).
+  Contacts carry derived `daysLeft`/`isDue` and companies a derived `contactedCount`
+  (count of linked contacts past `hit`), backed by prototype logic ported into
+  `server/src/domain/followup.js`. A guided `PATCH /api/contacts/:id/stage` stamps
+  `firstDate`/`lastDate`, resets `followups`, and logs a `status_change` `Activity`
+  in one transaction; `POST /api/contacts/:id/followup` bumps `followups` + `lastDate`.
+  Ownership enforced via `updateMany`/`deleteMany` filtered by `{ id, userId }` (404 on
+  `count === 0`) and `findFirst`; a contact's `companyId` is verified owned before
+  create/update. The prototype's free-text contact `note` was dropped from the model —
+  notes are `Activity` rows (`type: "note"`), which Phase 4 import relies on. Verified
+  every route via curl; lint/format clean, client build passes. Shipped on branch
+  `feature/rest-api` (PR #3).
 
 - 2026-06-29 — **Auth (JWT) — Phase 2** (Completed). Register/login/refresh/logout
   under `/api/auth` plus a protected `GET /api/me`. `server/src/auth/` holds

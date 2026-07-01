@@ -1,0 +1,823 @@
+{
+  "info": {
+    "name": "Job Tracker API",
+    "_postman_id": "b3f1c2a4-1d2e-4f3a-9b0c-1a2b3c4d5e6f",
+    "description": "Full REST surface for the Job Tracker API (Phase 2 auth + Phase 3 core CRUD + Phase 4 import).\n\nUsage:\n1. Start the API: `npm run dev:server` (defaults to http://localhost:3000) and the DB: `npm run db:up` + `npm run db:seed`.\n2. Run the whole collection top-to-bottom with the Collection Runner. Folders are ordered so created ids/token cascade: Auth > Login captures {{accessToken}}; Companies/Contacts/Applications POSTs capture their ids into collection variables that later requests reuse.\n\nAuth: the collection sends `Authorization: Bearer {{accessToken}}` by default. The Health and Auth (register/login/refresh/logout) requests override this to no-auth. The refresh endpoint relies on the httpOnly refresh cookie, which Postman stores and replays automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "devEmail", "value": "dev@jobtracker.local" },
+    { "key": "devPassword", "value": "devpassword123" },
+    { "key": "accessToken", "value": "" },
+    { "key": "companyId", "value": "" },
+    { "key": "contactId", "value": "" },
+    { "key": "activityId", "value": "" },
+    { "key": "applicationId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('ok:true', () => pm.expect(pm.response.json().ok).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/auth/register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman+{{$timestamp}}@jobtracker.local\",\n  \"password\": \"postmanpass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Creates a fresh user (unique email via {{$timestamp}}). Returns an access token + sets the refresh cookie. Does NOT overwrite {{accessToken}} so the rest of the run uses the seeded dev user from Login."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('returns accessToken', () => pm.expect(pm.response.json().accessToken).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{devEmail}}\",\n  \"password\": \"{{devPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const token = pm.response.json().accessToken;",
+                  "pm.test('returns accessToken', () => pm.expect(token).to.be.a('string'));",
+                  "pm.collectionVariables.set('accessToken', token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api", "me"] },
+            "description": "Protected route — proves the Bearer access token -> req.userId flow."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('returns user', () => pm.expect(pm.response.json().user).to.be.an('object'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/me (no token -> 401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api", "me"] },
+            "description": "Negative test: a protected route without a token returns 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/refresh",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Uses the httpOnly refresh cookie set by Login (Postman replays it automatically) to mint a new access token, which is stored back into {{accessToken}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const token = pm.response.json().accessToken;",
+                  "pm.test('returns accessToken', () => pm.expect(token).to.be.a('string'));",
+                  "pm.collectionVariables.set('accessToken', token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Companies",
+      "item": [
+        {
+          "name": "POST /api/companies",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Co\",\n  \"link\": \"https://postman.example\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/companies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companies"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json().company.id;",
+                  "pm.test('returns company id', () => pm.expect(id).to.be.a('string'));",
+                  "pm.collectionVariables.set('companyId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/companies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/companies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companies"]
+            },
+            "description": "Each company carries derived contactsTotal + contactedCount."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('returns companies array', () => pm.expect(pm.response.json().companies).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/companies/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/companies/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companies", "{{companyId}}"]
+            },
+            "description": "Detail includes nested contacts (each with derived daysLeft/isDue) + contactedCount."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('has nested contacts array', () => pm.expect(pm.response.json().company.contacts).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/companies/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Co (renamed)\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/companies/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companies", "{{companyId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "POST /api/contacts",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Contact\",\n  \"person\": \"Pat Tester\",\n  \"personRole\": \"Hiring Manager\",\n  \"link\": \"https://linkedin.com/in/pattester\",\n  \"companyId\": \"{{companyId}}\",\n  \"lane\": \"Agency\",\n  \"channel\": \"Email\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json().contact.id;",
+                  "pm.test('returns contact id', () => pm.expect(id).to.be.a('string'));",
+                  "pm.collectionVariables.set('contactId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/contacts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts"]
+            },
+            "description": "Each contact carries derived daysLeft + isDue."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('returns contacts array', () => pm.expect(pm.response.json().contacts).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/contacts/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}"]
+            },
+            "description": "Detail includes the activity timeline."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('has activities array', () => pm.expect(pm.response.json().contact.activities).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/contacts/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"personRole\": \"Lead Recruiter\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}"]
+            },
+            "description": "General field edits. Note: `stage` is rejected here (400) — use PATCH /:id/stage."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/contacts/:id/stage",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stage\": \"sent\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}/stage",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}", "stage"]
+            },
+            "description": "Guided pipeline transition: stamps firstDate/lastDate, resets followups, logs a status_change activity (transactional)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('stage updated', () => pm.expect(pm.response.json().contact.stage).to.eql('sent'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/contacts/:id/followup",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}/followup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}", "followup"]
+            },
+            "description": "Records a follow-up: increments followups, refreshes lastDate, logs a followup activity."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('followups incremented', () => pm.expect(pm.response.json().contact.followups).to.be.at.least(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/contacts/:id (stage -> 400)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stage\": \"contacted\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}"]
+            },
+            "description": "Negative test: changing stage via the general PATCH is rejected (use /:id/stage)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('400 Bad Request', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Activities",
+      "item": [
+        {
+          "name": "POST /api/contacts/:id/activities",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"note\",\n  \"body\": \"Logged a call from Postman.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}/activities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}", "activities"]
+            },
+            "description": "Only user-authored types (note, reply) are accepted; status_change/followup are server-written."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json().activity.id;",
+                  "pm.test('returns activity id', () => pm.expect(id).to.be.a('string'));",
+                  "pm.collectionVariables.set('activityId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/contacts/:id/activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}/activities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}", "activities"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('returns activities array', () => pm.expect(pm.response.json().activities).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST activities (forged type -> 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"status_change\",\n  \"body\": \"forged\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}/activities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}", "activities"]
+            },
+            "description": "Negative test: clients cannot forge system activity types."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('400 Bad Request', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/activities/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/{{activityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "{{activityId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Applications",
+      "item": [
+        {
+          "name": "POST /api/applications",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company\": \"Postman Co\",\n  \"position\": \"Senior Engineer\",\n  \"link\": \"https://postman.example/jobs/se\",\n  \"note\": \"Applied via Postman.\",\n  \"appliedDate\": \"2026-06-20\",\n  \"status\": \"applied\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json().application.id;",
+                  "pm.test('returns application id', () => pm.expect(id).to.be.a('string'));",
+                  "pm.collectionVariables.set('applicationId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('returns applications array', () => pm.expect(pm.response.json().applications).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/applications/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "{{applicationId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/applications/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"interview\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "{{applicationId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('status updated', () => pm.expect(pm.response.json().application.status).to.eql('interview'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/applications/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "{{applicationId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Import",
+      "item": [
+        {
+          "name": "POST /api/import (merge)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"items\": [\n    {\n      \"id\": \"proto-1\",\n      \"name\": \"Pixel Studio\",\n      \"person\": \"Dana Reed\",\n      \"personRole\": \"Design Lead\",\n      \"link\": \"https://pixel.example\",\n      \"lane\": \"Agency\",\n      \"channel\": \"Email\",\n      \"note\": \"Met at a meetup; follow up about the brand refresh.\",\n      \"status\": \"sent\",\n      \"firstDate\": \"2026-06-20\",\n      \"lastDate\": \"2026-06-20\",\n      \"followups\": 0\n    },\n    {\n      \"id\": \"proto-2\",\n      \"name\": \"Warm Intro Co\",\n      \"person\": \"\",\n      \"personRole\": \"\",\n      \"link\": \"\",\n      \"lane\": \"Warm\",\n      \"channel\": \"LinkedIn\",\n      \"note\": \"\",\n      \"status\": \"reply\",\n      \"firstDate\": null,\n      \"lastDate\": null,\n      \"followups\": 1\n    }\n  ],\n  \"apps\": [\n    {\n      \"id\": \"proto-a1\",\n      \"company\": \"Acme Corp\",\n      \"position\": \"Frontend Engineer\",\n      \"link\": \"https://acme.example/jobs/fe\",\n      \"note\": \"Referred by a friend.\",\n      \"appliedDate\": \"2026-06-18\",\n      \"status\": \"interview\"\n    }\n  ],\n  \"targets\": [\n    { \"id\": \"proto-t1\", \"name\": \"Pixel Studio\", \"link\": \"https://pixel.example\", \"contacted\": 1 }\n  ],\n  \"timers\": { \"Agency\": 7, \"Company\": 7, \"Freelance\": 7, \"Warm\": 7, \"max\": 2 }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/import?mode=merge",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "import"],
+              "query": [{ "key": "mode", "value": "merge" }]
+            },
+            "description": "Restore a prototype 'Export backup' JSON. `items`→Contact (status→stage, reply→accepted, note→a note Activity), `targets`→Company, `apps`→Application. Contacts link to a company by matching name. `?mode=replace` wipes the user's existing data first; `merge` (default) appends."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('imported counts', () => {",
+                  "  pm.expect(body.imported.contacts).to.eql(2);",
+                  "  pm.expect(body.imported.companies).to.eql(1);",
+                  "  pm.expect(body.imported.applications).to.eql(1);",
+                  "  pm.expect(body.imported.activities).to.eql(1);",
+                  "});",
+                  "pm.test('timers echoed, not persisted', () => pm.expect(body.timersIgnored).to.not.eql(null));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "DELETE /api/contacts/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/companies/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/companies/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companies", "{{companyId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/logout",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Clears the refresh cookie."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
