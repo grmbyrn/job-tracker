@@ -24,7 +24,10 @@ const strength = computed(() => {
   return Math.min(3, score);
 });
 const strengthNote = computed(
-  () => ['', 'A little short — 8 characters minimum.', 'Good — that works.', "Great! You're all set."][strength.value],
+  () =>
+    ['', 'A little short — 8 characters minimum.', 'Good — that works.', "Great! You're all set."][
+      strength.value
+    ],
 );
 
 async function submit() {
@@ -49,9 +52,7 @@ async function submit() {
   <div class="auth-split">
     <div class="auth-col">
       <div class="auth-form">
-        <div class="auth-brand">
-          <span class="brand-logo">✓</span> Job Tracker
-        </div>
+        <div class="auth-brand"><span class="brand-logo">✓</span> Job Tracker</div>
 
         <span class="eyebrow">✳︎ Let's get you started</span>
         <h1 class="auth-title">Your kinder <em>job&nbsp;search</em> starts here.</h1>

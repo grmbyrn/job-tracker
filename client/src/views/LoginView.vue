@@ -34,9 +34,7 @@ async function submit() {
   <div class="auth-split">
     <div class="auth-col">
       <div class="auth-form">
-        <div class="auth-brand">
-          <span class="brand-logo">✓</span> Job Tracker
-        </div>
+        <div class="auth-brand"><span class="brand-logo">✓</span> Job Tracker</div>
 
         <span class="eyebrow">✳︎ Welcome back</span>
         <h1 class="auth-title">Let's find your <em>next&nbsp;yes.</em></h1>
