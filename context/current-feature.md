@@ -1,40 +1,55 @@
 # Current feature
 
-**Migrate existing data — Phase 4** (Implemented — pending PR)
+**Vue frontend foundation — Phase 5** (Implemented — pending live verification + PR)
 
-> Spec: [features/phase-4-migrate-data.md](features/phase-4-migrate-data.md) ·
-> Roadmap: [roadmap.md](roadmap.md) (Phase 4)
+> Spec: [features/phase-5-frontend-foundation.md](features/phase-5-frontend-foundation.md) ·
+> Roadmap: [roadmap.md](roadmap.md) (Phase 5)
 
 ## Goal
 
-Restore the prototype's localStorage "Export backup" JSON into Postgres so no
-outreach/application history is lost in the migration, via a user-scoped
-`POST /api/import` built on the Phase 3 models.
+Stand up the Vue app shell — routing, state, an authenticated API layer, and the
+login/register flow — so the frontend can start talking to the Phase 2–4 API. End
+state: log in and land on an empty authenticated app shell with working nav.
 
 ## Branch
 
-`feature/data-import` (off `main`).
+`feature/frontend-foundation` (off `main`).
 
 ## Scope (this feature)
 
-- `POST /api/import?mode=merge|replace` behind `requireAuth`, scoped by `req.userId`,
-  accepting the prototype's verbatim `{ items, apps, targets, timers }` backup.
-- Mapping: `targets` → `Company`, `items` → `Contact` (`status` → `stage`, legacy
-  `reply` → `accepted`, free-text `note` → a `note` `Activity`), `apps` → `Application`.
-- Link contacts to companies by matching `name`; whole import runs in one transaction.
-- `timers` echoed back but not persisted (no Settings model yet — Phase 6).
+- Install `vue-router`, `pinia`, and an HTTP client (`axios` or a `fetch` wrapper).
+- Port the prototype's CSS (design tokens, light/dark) into Vue — a global
+  stylesheet or a `useTheme` composable.
+- Routes: `/login`, `/register`, `/` (outreach), `/applications`, `/companies`;
+  a route guard redirects unauthenticated users to `/login`.
+- Pinia stores: `auth`, `contacts`, `applications`, `companies`.
+- API client with auth-header injection + 401 → refresh-token retry (matching the
+  Phase 2 access-in-memory / refresh-in-httpOnly-cookie design).
 
 ## Acceptance criteria
 
-- [x] A prototype backup file imports cleanly; counts + pipeline stages match the source.
-- [x] Route is behind `requireAuth` and scoped by `req.userId`; `mode=replace` is a
-      clean restore, `mode=merge` appends.
-- [x] Postman collection exercises the import route successfully; lint/format + client build clean.
-
-_Implemented and verified end-to-end via curl (2026-07-01); pending PR on
-`feature/data-import`._
+- [x] `vue-router` + `pinia` wired; app boots with the route set above.
+- [x] Prototype design tokens (light/dark) ported into the Vue app.
+- [x] Route guard redirects unauthenticated users to `/login`.
+- [x] API client injects the access token and retries once via `/api/auth/refresh` on 401.
+- [x] lint/format + client build clean.
+- [ ] Login → land on an empty authenticated app shell with working nav
+      _(pending a live run with server + Postgres up)_.
 
 # History
+
+- 2026-07-01 — **Migrate existing data — Phase 4** (Completed). Restored the
+  prototype's localStorage "Export backup" JSON into Postgres via a user-scoped
+  `POST /api/import?mode=merge|replace` behind `requireAuth` (scoped by `req.userId`),
+  accepting the prototype's verbatim `{ items, apps, targets, timers }` backup. Mapping:
+  `targets` → `Company`, `items` → `Contact` (`status` → `stage`, legacy `reply` →
+  `accepted`, free-text `note` → a `note` `Activity`), `apps` → `Application`; contacts
+  linked to companies by matching `name`, with the whole import running in one
+  transaction. `mode=replace` is a clean restore, `mode=merge` appends; `timers` are
+  echoed back but not persisted (no Settings model until Phase 6). Verified end-to-end
+  via curl and the Postman collection — counts + pipeline stages match the source;
+  lint/format clean, client build passes. Shipped on branch `feature/data-import`
+  (PR #4). Spec: [features/phase-4-migrate-data.md](features/phase-4-migrate-data.md).
 
 - 2026-07-01 — **Core REST API — Phase 3** (Completed). Full user-scoped CRUD for
   Companies, Contacts, Activities, and Applications, all behind `requireAuth` and
