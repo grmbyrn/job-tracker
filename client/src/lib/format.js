@@ -14,9 +14,17 @@ export function toDateInput(value) {
   return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
 }
 
-// Today's date as YYYY-MM-DD.
+// Today's date as YYYY-MM-DD (UTC — used for date inputs / backup filenames).
 export function today() {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Today's date in the browser's *local* timezone as YYYY-MM-DD. The Daily Plan
+// rolls over at the user's own midnight, so it sends this rather than the UTC day.
+export function localToday() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 // Whole days since a date (ISO string or Date).

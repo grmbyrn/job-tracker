@@ -5,11 +5,11 @@
 
 | Field       | Value                                                              |
 | ----------- | ----------------------------------------------------------------- |
-| Status      | Current                                                           |
+| Status      | Deferred (2026-07-01) — superseded by the Phase 8 pivot; revisit later |
 | Branch      | `feature/new-features` (off `main`)                              |
 | Roadmap ref | Phase 7                                                           |
 | Depends on  | Phase 6 (wired views + stores) and Phase 9 (live app, test harness, prod deploy) |
-| Blocks      | Phase 8 (the ADHD/neurodivergent pivot builds on the timeline, reminders, and effort data) |
+| Blocks      | Nothing now — Phase 8's lead feature (Daily Plan, 8a) does **not** depend on this; the later 8c/8g sub-features reuse the timeline + reminder framing |
 
 ## Goal
 

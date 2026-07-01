@@ -93,6 +93,26 @@ export const updateTimersSchema = z
 
 export const updateSettingsSchema = z.object({ timers: updateTimersSchema }).strict();
 
+// --- Daily Plan (Phase 8) ---
+// A calendar day as YYYY-MM-DD — the client sends its *local* date so days roll
+// over at the user's midnight (the route turns it into a UTC-midnight Date).
+export const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected a YYYY-MM-DD date.');
+
+// Add a task to a given day's plan.
+export const createPlanTaskSchema = z.object({ date: dateOnly, title: text(500) }).strict();
+
+// Edit a task: rename, toggle done, or reorder (at least one).
+export const updatePlanTaskSchema = nonEmpty(
+  z
+    .object({
+      title: text(500),
+      done: z.boolean(),
+      order: z.number().int().min(0),
+    })
+    .partial()
+    .strict(),
+);
+
 // --- Applications ---
 export const createApplicationSchema = z
   .object({
