@@ -1,46 +1,79 @@
 # Current feature
 
-**Feature parity with the prototype — Phase 6** (Implemented — API verified; live UI click-through pending)
+**Hardening & deployment — Phase 9** (Not started)
 
-> Spec: [features/phase-6-feature-parity.md](features/phase-6-feature-parity.md) ·
-> Roadmap: [roadmap.md](roadmap.md) (Phase 6)
+> Spec: [features/phase-9-hardening-deployment.md](features/phase-9-hardening-deployment.md) ·
+> Roadmap: [roadmap.md](roadmap.md) (Phase 9)
 
 ## Goal
 
-Fill the Phase 5 app shell so the three views behave like the prototype does today,
-but backed by the live API. End state: every action a user could take in the
-`index.html` prototype works against Postgres through the REST API.
+Ship it. Take the feature-complete app from Phase 6 and make it production-worthy —
+tested, secured, and deployed to a live URL with managed Postgres. End state: a public
+URL where a new user can register and run the full outreach → applications → companies
+flow against a production database.
+
+> **Deploying first.** The roadmap runs 7 → 8 → 9, but Phase 7 (new features) and Phase 8
+> (the ADHD/neurodivergent pivot) are additive and can layer onto a live app, so they are
+> deferred. We ship the parity build now to get real usage, a demoable URL, and a
+> production baseline before building on it.
 
 ## Branch
 
-`feature/feature-parity` (off `main`).
+`feature/hardening-deployment` (off `main`).
 
 ## Scope (this feature)
 
-- **People & outreach view:** lane tabs, add form (incl. person + role), pipeline
-  groups (hitlist → awaiting → accepted → contacted → in comms), countdown pills, and
-  action buttons that drive stage transitions via `PATCH /api/contacts/:id/stage`.
-- **Applications view:** add form, status groups, status transitions.
-- **Target companies view:** add company + link; show contacts linked to it and
-  progress toward the 3-contact goal (derived from real contacts, not a counter).
-- **Settings:** follow-up timers UI persisted to the backend (introduces a per-user
-  settings store; roadmap flags a `Settings` model as its likely home).
-- **Export/import buttons** calling the API — keep the JSON backup capability
-  against Phase 4's `POST /api/import`.
+- **Tests:** API integration tests (Vitest + Supertest) for auth + core CRUD/stage flows;
+  a few Vue component tests on the key views; wire `test` scripts.
+- **Security pass:** `helmet`, rate limiting on auth (`express-rate-limit`), env-driven
+  CORS allowlist, validation audit across routes, secrets only in env.
+- **Production builds & config:** client build with API base URL from env; server prod
+  start path; dev vs prod environment configs.
+- **Managed database:** provision managed Postgres; run `prisma migrate deploy`.
+- **Deployment:** deploy API + DB (Railway/Render/Fly) and frontend (Vercel/Netlify);
+  set prod env vars; smoke-test register → full flow in production.
+- **Docs:** README with setup, architecture diagram, env vars, and screenshots.
 
 ## Acceptance criteria
 
-- [x] Outreach view renders lane tabs + pipeline groups from the contacts store; the
-      add form creates a contact and stage buttons transition it (with countdown pills).
-- [x] Applications view lists by status group, adds applications, and transitions status.
-- [x] Companies view adds a company + link, shows linked contacts, and displays
-      3-contact progress derived from real contacts.
-- [x] Follow-up timers editable in a settings UI and persisted to the backend.
-- [x] Export downloads a JSON backup; import restores it via `POST /api/import`.
-- [x] lint/format + client build clean; every prototype action maps to a verified API path.
-- [ ] Browser click-through with server + Postgres up _(one residual manual check)_.
+- [x] `npm test` runs green: auth + core API integration tests (21) and client tests (16).
+- [x] Security middleware in place (helmet, auth rate limiting, env-driven CORS allowlist);
+      no secrets in the repo; validation confirmed on every route.
+- [x] Production builds succeed for client and server with prod env config (client build
+      clean; `railway.json` + `client/vercel.json` + prod scripts in place).
+- [ ] Managed Postgres provisioned and migrated (`prisma migrate deploy`) _(needs cloud acct)_.
+- [ ] App deployed at a live URL; register → outreach/applications/companies flow works
+      end-to-end in production (smoke-tested) _(needs cloud acct)_.
+- [x] README documents setup, testing, architecture, env vars, and deployment steps
+      (screenshots still to add).
 
 # History
+
+- 2026-07-01 — **Feature parity with the prototype — Phase 6** (Completed — API verified
+  end-to-end; one residual live-UI browser click-through pending). Filled the Phase 5 shell
+  so the three views behave like the `index.html` prototype, backed by the live API and
+  scoped per user. **Contacts store** gained mutating actions (create, `setStage`,
+  `followup`, `addNote`, delete) over the Phase 3 endpoints, and the Phase 5 `fetchAll`
+  bug was fixed by turning `collection.js` into a `useCollection(path, key)` composable
+  that reads `data[key]` (not `data.items`) and keeps lists in sync via `upsert`/`removeById`
+  (refetch-on-mutation, not optimistic). **Outreach view** (`/`): lane tabs (Agency/Company/
+  Freelance/Warm), add form (person + role + optional company link + channel), pipeline
+  groups (hitlist → awaiting → accepted → contacted → in comms mapped from the `Stage`
+  enum), countdown pills from the API's derived `daysLeft`/`isDue`, and stage/follow-up
+  action buttons. **Applications view** (`/applications`): add form, `AppStatus` groups,
+  status transitions. **Companies view** (`/companies`): add company + link, linked-contacts
+  list, 3-contact progress from derived `contactedCount`. **Settings:** chose **JSON on
+  `User`** (`followupTimers` column, migration `add_user_followup_timers`) over a separate
+  model; added `GET/PUT /api/settings`, a `contactsRouter` middleware that loads `req.timers`
+  once per request so every derived `daysLeft`/`isDue` reflects the user's settings, a timers
+  UI + store, and made Phase 4 import persist a backup's `timers` (dropping the no-op echo).
+  A contact add-form note is logged as the first `note` activity (surfaced in Phase 7).
+  **Export/import** live in the app-shell toolbar; import uses a confirm to pick `replace`
+  vs `merge`, then refetches every store. Lint/format clean; client `npm run build` passes;
+  API verified end-to-end via a Node script (settings persist + drive daysLeft/isDue;
+  follow-up cap; derived company counts; app transitions; import persists timers). Shipped
+  to `main` via PR #5 (branch `feature/feature-parity`). Spec:
+  [features/phase-6-feature-parity.md](features/phase-6-feature-parity.md).
 
 - 2026-07-01 — **Vue frontend foundation — Phase 5** (Completed). Stood up the Vue
   app shell so the frontend can talk to the Phase 2–4 API. Added `vue-router`, `pinia`,

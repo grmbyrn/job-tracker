@@ -12,12 +12,15 @@ const MIN_PASSWORD_LENGTH = 8;
 // Public shape of a user — never expose passwordHash.
 const userView = (user) => ({ id: user.id, email: user.email, createdAt: user.createdAt });
 
-// httpOnly so client JS can't read it; SameSite=Lax + Secure in prod; scoped to
-// the refresh endpoint so it isn't sent on every request. 7d to match the token.
+// httpOnly so client JS can't read it; scoped to the refresh endpoint so it isn't
+// sent on every request; 7d to match the token. In production the frontend and API
+// are on different domains, so the cookie must be sent cross-site: SameSite=None
+// (which mandates Secure). Dev stays Lax over http.
+const isProd = () => process.env.NODE_ENV === 'production';
 const refreshCookieOptions = () => ({
   httpOnly: true,
-  sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
+  sameSite: isProd() ? 'none' : 'lax',
+  secure: isProd(),
   path: '/api/auth',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
@@ -102,7 +105,13 @@ authRouter.post('/refresh', (req, res) => {
 });
 
 authRouter.post('/logout', (req, res) => {
-  // clearCookie must mirror the path the cookie was set with.
-  res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+  // clearCookie must mirror the attributes the cookie was set with (path +
+  // sameSite/secure) or the browser won't match and remove it.
+  res.clearCookie(REFRESH_COOKIE, {
+    httpOnly: true,
+    sameSite: isProd() ? 'none' : 'lax',
+    secure: isProd(),
+    path: '/api/auth',
+  });
   res.status(204).end();
 });
