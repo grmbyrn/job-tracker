@@ -1,7 +1,9 @@
 # Job Tracker — Roadmap: HTML prototype → Vue + Node/Express + Postgres
 
 Migrating the single-file `index.html` prototype into a full-stack web app with
-accounts, a real database, and server-side follow-up reminders.
+accounts, a real database, and server-side follow-up reminders — and, from
+**Phase 8** on, pivoting from a neutral tracker into an assistant built for
+ADHD / neurodivergent job-seekers (the app's niche).
 
 ## Target stack
 
@@ -243,7 +245,64 @@ model Application {
 
 ---
 
-## Phase 8 — Hardening & deployment
+## Phase 8 — ADHD / neurodivergent-assistive pivot
+
+**Goal:** turn the tracker from a neutral record-keeper into an *assistant* for
+ADHD / neurodivergent job-seekers. Job hunting is uniquely ND-hostile — long
+feedback loops, no external deadlines, high rejection volume, all self-directed —
+so this phase reduces executive-function load, softens rejection sensitivity (RSD),
+and rewards effort over outcomes. **This marks the product pivot and the niche the
+app is built around.**
+
+> These are **stretch goals**: each builds on the Phase 5–7 foundation (pipeline,
+> `isDue` / `daysLeft`, follow-up timers, activity timeline, reminders) and can ship
+> independently, so tackle the highest-leverage ones first. Recommended starting
+> point: **8a ("Now" mode)** — the clearest differentiator and the smallest build.
+
+### 8a. "Now" mode — one next action
+- [ ] A focus view that surfaces a **single** card ("follow up with Jo at Acme") with
+      one primary action (Done) + Snooze — instead of the full pipeline, which is a
+      wall of choices that stalls task initiation.
+- [ ] Reuse `isDue` + `daysLeft` sorting to pick "the next move"; fall back to the
+      oldest hitlist item when nothing is due.
+- [ ] Snooze bumps `lastDate` (or a dedicated `snoozedUntil`) so the item drops out
+      of "now" for a while without guilt.
+
+### 8b. Effort metrics + gentle rejection handling (RSD)
+- [ ] Track and celebrate **actions taken** (messages sent, follow-ups, people added)
+      per week — effort, not outcomes (which arrive slowly and are mostly "no").
+- [ ] Make rejections low-ceremony: auto-collapse a "closed" group; no red pile.
+- [ ] Cap the "follow up now" surface to the top few items so it nudges rather than
+      shames when the backlog grows.
+
+### 8c. Frictionless capture (brain dump)
+- [ ] A single quick-add box: type a name, hit enter, categorize later — only a name
+      required (defer lane/channel), so capturing never gets blocked on decisions.
+- [ ] An "inbox" of uncategorized captures to triage when there's energy for it.
+
+### 8d. Outreach sprints (body-doubling / Pomodoro)
+- [ ] A bounded focus timer ("chase 3 people in 20 minutes") that turns vague dread
+      into a finite, startable task; pairs naturally with "Now" mode.
+- [ ] Roll what got done in the sprint into the effort metrics (8b).
+
+### 8e. Message templates / snippets
+- [ ] Per-stage / per-channel copyable snippets ("connection accepted → send this")
+      so composing from a blank page isn't the blocker.
+- [ ] Optional token fill (name, role, company) pulled from the contact.
+
+### 8f. Gentle, time-aware nudges
+- [ ] Frame the Phase 7b reminder digest kindly ("3 small things waiting"), never
+      "OVERDUE" — avoid the guilt spiral and broken-streak shame.
+- [ ] Concrete time language over relative ("by Thursday" instead of "2 days left")
+      to counter time-blindness.
+- [ ] Per-user tone / intensity setting for nudges.
+
+**Deliverable:** first-run lands in "Now" mode with one clear action; a week of
+activity shows an effort summary; rejections stay quiet.
+
+---
+
+## Phase 9 — Hardening & deployment
 
 **Goal:** ship it.
 
@@ -265,11 +324,12 @@ model Application {
 ```
 0 → 1 → 2 → 3 → 4
               ↘
-                5 → 6 → 7 → 8
+                5 → 6 → 7 → 8 → 9
 ```
 
 Build the API first (0–4) so the frontend (5–6) has something real to talk to;
-layer new features (7) once parity holds; harden and deploy last (8).
+layer new features (7) once parity holds; pivot to the ADHD/neurodivergent-assistive
+experience (8); harden and deploy last (9).
 
 ## Stretch ideas (later)
 

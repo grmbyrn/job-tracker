@@ -1,42 +1,67 @@
 # Current feature
 
-**Vue frontend foundation — Phase 5** (Implemented — pending live verification + PR)
+**Feature parity with the prototype — Phase 6** (Implemented — API verified; live UI click-through pending)
 
-> Spec: [features/phase-5-frontend-foundation.md](features/phase-5-frontend-foundation.md) ·
-> Roadmap: [roadmap.md](roadmap.md) (Phase 5)
+> Spec: [features/phase-6-feature-parity.md](features/phase-6-feature-parity.md) ·
+> Roadmap: [roadmap.md](roadmap.md) (Phase 6)
 
 ## Goal
 
-Stand up the Vue app shell — routing, state, an authenticated API layer, and the
-login/register flow — so the frontend can start talking to the Phase 2–4 API. End
-state: log in and land on an empty authenticated app shell with working nav.
+Fill the Phase 5 app shell so the three views behave like the prototype does today,
+but backed by the live API. End state: every action a user could take in the
+`index.html` prototype works against Postgres through the REST API.
 
 ## Branch
 
-`feature/frontend-foundation` (off `main`).
+`feature/feature-parity` (off `main`).
 
 ## Scope (this feature)
 
-- Install `vue-router`, `pinia`, and an HTTP client (`axios` or a `fetch` wrapper).
-- Port the prototype's CSS (design tokens, light/dark) into Vue — a global
-  stylesheet or a `useTheme` composable.
-- Routes: `/login`, `/register`, `/` (outreach), `/applications`, `/companies`;
-  a route guard redirects unauthenticated users to `/login`.
-- Pinia stores: `auth`, `contacts`, `applications`, `companies`.
-- API client with auth-header injection + 401 → refresh-token retry (matching the
-  Phase 2 access-in-memory / refresh-in-httpOnly-cookie design).
+- **People & outreach view:** lane tabs, add form (incl. person + role), pipeline
+  groups (hitlist → awaiting → accepted → contacted → in comms), countdown pills, and
+  action buttons that drive stage transitions via `PATCH /api/contacts/:id/stage`.
+- **Applications view:** add form, status groups, status transitions.
+- **Target companies view:** add company + link; show contacts linked to it and
+  progress toward the 3-contact goal (derived from real contacts, not a counter).
+- **Settings:** follow-up timers UI persisted to the backend (introduces a per-user
+  settings store; roadmap flags a `Settings` model as its likely home).
+- **Export/import buttons** calling the API — keep the JSON backup capability
+  against Phase 4's `POST /api/import`.
 
 ## Acceptance criteria
 
-- [x] `vue-router` + `pinia` wired; app boots with the route set above.
-- [x] Prototype design tokens (light/dark) ported into the Vue app.
-- [x] Route guard redirects unauthenticated users to `/login`.
-- [x] API client injects the access token and retries once via `/api/auth/refresh` on 401.
-- [x] lint/format + client build clean.
-- [ ] Login → land on an empty authenticated app shell with working nav
-      _(pending a live run with server + Postgres up)_.
+- [x] Outreach view renders lane tabs + pipeline groups from the contacts store; the
+      add form creates a contact and stage buttons transition it (with countdown pills).
+- [x] Applications view lists by status group, adds applications, and transitions status.
+- [x] Companies view adds a company + link, shows linked contacts, and displays
+      3-contact progress derived from real contacts.
+- [x] Follow-up timers editable in a settings UI and persisted to the backend.
+- [x] Export downloads a JSON backup; import restores it via `POST /api/import`.
+- [x] lint/format + client build clean; every prototype action maps to a verified API path.
+- [ ] Browser click-through with server + Postgres up _(one residual manual check)_.
 
 # History
+
+- 2026-07-01 — **Vue frontend foundation — Phase 5** (Completed). Stood up the Vue
+  app shell so the frontend can talk to the Phase 2–4 API. Added `vue-router`, `pinia`,
+  and `axios` to the `client` workspace. A single API client (`src/api/client.js`) holds
+  the access token in a module var (not `localStorage`), injects it as
+  `Authorization: Bearer …`, sends credentials so the refresh cookie rides along, and on
+  a `401` runs a **single-flight** `refreshAccessToken()` against `/api/auth/refresh`
+  (bare `axios` to dodge interceptor recursion) before replaying the original request —
+  auth routes excluded so a bad login stays a 401. The `auth` store mirrors the token and
+  `bootstrap()`s once on cold load (silent refresh + `GET /api/me`) so a reload doesn't
+  bounce a logged-in user; `contacts`/`applications`/`companies` share a
+  `defineCollectionStore(id, path)` factory (state + `fetchAll`, mutations deferred to
+  Phase 6). Router wires `/login`, `/register`, `/` (outreach), `/applications`,
+  `/companies` with a global guard that redirects unauthenticated users to `/login` and
+  keeps authed users out of the auth routes. Ported the prototype's CSS tokens +
+  light/dark theme (`style.css` + a `useTheme` composable, auto → light → dark toggled
+  from the header) and built the app-shell nav (`App.vue`) with empty view placeholders.
+  Lint/format clean, client `npm run build` passes; login → authed shell still pending a
+  live run with server + Postgres up. Shipped to `main` as commit `ace2d6d` (branch
+  `feature/frontend-foundation`). Spec:
+  [features/phase-5-frontend-foundation.md](features/phase-5-frontend-foundation.md).
 
 - 2026-07-01 — **Migrate existing data — Phase 4** (Completed). Restored the
   prototype's localStorage "Export backup" JSON into Postgres via a user-scoped

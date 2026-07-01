@@ -239,3 +239,290 @@ select:focus {
   color: var(--text-3);
   margin-top: 10px;
 }
+
+/* ---- Outreach / applications / companies views (ported from prototype) ---- */
+
+/* Stat cards */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.stats.stats-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.stat {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+}
+.stat.alert {
+  background: var(--warn-bg);
+}
+.stat-num {
+  font-size: 22px;
+  font-weight: 600;
+}
+.stat.alert .stat-num {
+  color: var(--warn);
+}
+.stat-lbl {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+.stat.alert .stat-lbl {
+  color: var(--warn);
+}
+
+/* Lane / view tabs */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tab {
+  font-size: 13px;
+  padding: 7px 13px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  user-select: none;
+}
+.tab.active {
+  background: var(--surface-2);
+  border-color: var(--border-2);
+  font-weight: 500;
+}
+.badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  margin-left: 5px;
+  font-size: 11px;
+  line-height: 17px;
+  text-align: center;
+  background: var(--info-bg);
+  color: var(--info);
+  border-radius: 999px;
+}
+
+/* Add form */
+.add {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.add-row:last-child {
+  margin-bottom: 0;
+}
+/* Inputs flex to fill the row here (the base rule is full-width for auth forms). */
+.add-row input,
+.add-row select {
+  flex: 1;
+  min-width: 130px;
+  width: auto;
+}
+
+/* Follow-up timers settings */
+.settings {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 14px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.settings summary {
+  cursor: pointer;
+  padding: 12px 0;
+  font-size: 13px;
+  color: var(--text-2);
+  user-select: none;
+  list-style: none;
+}
+.settings summary::-webkit-details-marker {
+  display: none;
+}
+.settings summary::before {
+  content: '\2699  ';
+}
+.settings-body {
+  padding: 4px 0 14px;
+}
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.set-row label {
+  flex: 1;
+  color: var(--text-2);
+}
+.set-row input {
+  flex: 0 0 70px;
+  width: 70px;
+  min-width: 0;
+}
+
+/* Group section labels */
+.section-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  margin: 20px 0 8px;
+  font-weight: 600;
+}
+.section-label.alert {
+  color: var(--warn);
+}
+
+/* List rows */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  background: var(--surface);
+}
+.item.due {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+}
+.item.hit {
+  background: var(--surface-2);
+  border-style: dashed;
+}
+.item.done {
+  background: var(--ok-bg);
+  border-color: transparent;
+}
+.dots {
+  letter-spacing: 2px;
+}
+.avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--info-bg);
+  color: var(--info);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+}
+.body {
+  flex: 1;
+  min-width: 0;
+}
+.name {
+  font-weight: 500;
+  font-size: 14px;
+  word-break: break-word;
+}
+.meta {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+.sublist {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 4px;
+}
+.countdown {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  margin-left: 4px;
+}
+.countdown.soon {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.pill {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  margin-left: 6px;
+}
+.item.hit .pill {
+  background: var(--surface);
+}
+.stage {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.s-await {
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+.s-reply {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.s-applied {
+  background: var(--info-bg);
+  color: var(--info);
+}
+.s-interview {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.s-offer {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.s-rejected {
+  background: var(--surface-2);
+  color: var(--text-3);
+}
+.actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Export / import toolbar */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.toolbar .btn {
+  font-size: 12px;
+  padding: 6px 11px;
+}

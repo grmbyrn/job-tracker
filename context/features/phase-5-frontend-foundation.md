@@ -5,7 +5,7 @@
 
 | Field       | Value                                                              |
 | ----------- | ----------------------------------------------------------------- |
-| Status      | Implemented (2026-07-01) — pending live verification + PR         |
+| Status      | Completed (2026-07-01) — shipped to `main` (`ace2d6d`); live verify pending |
 | Branch      | `feature/frontend-foundation`                                     |
 | Roadmap ref | Phase 5                                                           |
 | Depends on  | Phase 2 (auth endpoints + token model), Phases 3–4 (REST API)     |

@@ -8,12 +8,23 @@ import {
   stageTransitionSchema,
 } from '../validation/schemas.js';
 import { withFollowupInfo } from '../domain/followup.js';
+import { loadTimers } from '../domain/settings.js';
 import { nestedActivitiesRouter } from './activities.js';
 
 export const contactsRouter = Router();
 
 // Activity timeline lives under a contact: /api/contacts/:id/activities.
 contactsRouter.use('/:id/activities', nestedActivitiesRouter);
+
+// Attach the user's effective follow-up timers so every derived daysLeft/isDue
+// below reflects their settings (Phase 6). One lookup per contacts request; the
+// activities sub-router above short-circuits before this and doesn't need it.
+contactsRouter.use(
+  asyncHandler(async (req, res, next) => {
+    req.timers = await loadTimers(req.userId);
+    next();
+  }),
+);
 
 // Stages whose entry counts as fresh outreach: stamp the dates and reset the
 // follow-up counter (mirrors the prototype's sent/contacted transitions).
@@ -42,7 +53,7 @@ contactsRouter.get(
       where: { userId: req.userId },
       orderBy: { createdAt: 'desc' },
     });
-    res.json({ contacts: contacts.map((c) => withFollowupInfo(c)) });
+    res.json({ contacts: contacts.map((c) => withFollowupInfo(c, req.timers)) });
   }),
 );
 
@@ -55,7 +66,7 @@ contactsRouter.get(
       include: { activities: { orderBy: { createdAt: 'desc' } } },
     });
     if (!contact) throw new ApiError(404, 'Contact not found.');
-    res.json({ contact: withFollowupInfo(contact) });
+    res.json({ contact: withFollowupInfo(contact, req.timers) });
   }),
 );
 
@@ -68,7 +79,7 @@ contactsRouter.post(
     const contact = await prisma.contact.create({
       data: { ...req.body, userId: req.userId },
     });
-    res.status(201).json({ contact: withFollowupInfo(contact) });
+    res.status(201).json({ contact: withFollowupInfo(contact, req.timers) });
   }),
 );
 
@@ -83,7 +94,7 @@ contactsRouter.patch(
       where: { id: req.params.id },
       data: req.body,
     });
-    res.json({ contact: withFollowupInfo(contact) });
+    res.json({ contact: withFollowupInfo(contact, req.timers) });
   }),
 );
 
@@ -115,7 +126,7 @@ contactsRouter.patch(
         },
       }),
     ]);
-    res.json({ contact: withFollowupInfo(contact) });
+    res.json({ contact: withFollowupInfo(contact, req.timers) });
   }),
 );
 
@@ -134,7 +145,7 @@ contactsRouter.post(
         data: { contactId: existing.id, type: 'followup', body: 'Follow-up sent.' },
       }),
     ]);
-    res.json({ contact: withFollowupInfo(contact) });
+    res.json({ contact: withFollowupInfo(contact, req.timers) });
   }),
 );
 
